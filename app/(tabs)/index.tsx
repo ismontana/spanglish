@@ -1,27 +1,52 @@
 import { Ionicons } from '@expo/vector-icons';
+import Voice from '@react-native-voice/voice';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const [text, setText] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const router = useRouter();
+
+useEffect(() => {
+    Voice.onSpeechResults = e => {
+      setText(e.value?.[0] ?? '');
+    };
+
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+    const startListening = async () => {
+    try {
+      setIsListening(true);
+      await Voice.start('es-MX');
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <View style={styles.container}>
+
       <LinearGradient
         colors={['deepskyblue', 'red']}
         style={StyleSheet.absoluteFill}
       />
 
-      <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/menu')}>
+      <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
         <Ionicons name="menu" size={32} color="black" />
-      </TouchableOpacity>
+      </Pressable>
 
-      <TouchableOpacity style={styles.micButton}>
+      <Pressable style={styles.micButton}>
         <Ionicons name="mic" size={48} color="black" />
-      </TouchableOpacity>
+      </Pressable>
+        <h1>{text}</h1>
     </View>
   );
 }
