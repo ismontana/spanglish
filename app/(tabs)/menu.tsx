@@ -25,6 +25,11 @@ export default function MenuScreen() {
         <Ionicons name="help-circle-outline" size={32} color="black" />
         <Text style={styles.optionText}>Acerca de</Text>
       </TouchableOpacity>
+      
+      <TouchableOpacity style={styles.option} onPress={() => router.push('/user')}>
+        <Ionicons name="person-outline" size={32} color="black" />
+        <Text style={styles.optionText}>Mi perfil</Text>
+      </TouchableOpacity>
     </View>
   );
 }
