@@ -1,64 +1,17 @@
+import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  Pressable,
   View
 } from 'react-native';
-
-// Datos de ejemplo para el historial
-const historialData = [
-  {
-    id: '1',
-    originalText: 'Hello, how are you?',
-    translatedText: 'Hola, ¿cómo estás?',
-    fromLanguage: 'EN',
-    toLanguage: 'ES',
-    timestamp: new Date('2025-01-15T10:30:00'),
-    isFavorite: true,
-  },
-  {
-    id: '2',
-    originalText: 'Me gusta mucho esta aplicación',
-    translatedText: 'I really like this application',
-    fromLanguage: 'ES',
-    toLanguage: 'EN',
-    timestamp: new Date('2025-01-15T09:15:00'),
-    isFavorite: false,
-  },
-  {
-    id: '3',
-    originalText: 'Where is the nearest restaurant?',
-    translatedText: '¿Dónde está el restaurante más cercano?',
-    fromLanguage: 'EN',
-    toLanguage: 'ES',
-    timestamp: new Date('2025-01-14T18:45:00'),
-    isFavorite: false,
-  },
-  {
-    id: '4',
-    originalText: 'Gracias por tu ayuda',
-    translatedText: 'Thank you for your help',
-    fromLanguage: 'ES',
-    toLanguage: 'EN',
-    timestamp: new Date('2025-01-14T16:20:00'),
-    isFavorite: true,
-  },
-  {
-    id: '5',
-    originalText: 'What time is it?',
-    translatedText: '¿Qué hora es?',
-    fromLanguage: 'EN',
-    toLanguage: 'ES',
-    timestamp: new Date('2025-01-13T14:10:00'),
-    isFavorite: false,
-  },
-];
 
 interface HistorialItem {
   id: string;
@@ -74,9 +27,52 @@ export default function Historial() {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [historial, setHistorial] = useState<HistorialItem[]>(historialData);
+  const [historial, setHistorial] = useState<HistorialItem[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
 
-  // Filtrar historial basado en búsqueda y favoritos
+  useEffect(() => {
+    const fetchUsuario = async () => {
+      try {
+        const user = await getInfoUsuario();
+        if (user?.id) {
+          setUserId(user.id);
+        }
+      } catch (error) {
+        console.error('Error al obtener usuario:', error);
+      }
+    };
+
+    fetchUsuario();
+  }, []);
+
+  useEffect(() => {
+    const fetchHistorial = async () => {
+      try {
+        if (!userId) return;
+        
+        const response = await axios.post('http://localhost:4000/conversaciones/gethistorial', {
+          id_usuario: userId
+        });
+        
+        const data = response.data.map((item: any) => ({
+          id: item.id.toString(),
+          originalText: item.texto_original,
+          translatedText: item.texto_traducido,
+          fromLanguage: item.idioma_origen,
+          toLanguage: item.idioma_destino,
+          timestamp: new Date(item.created_at || new Date()),
+          isFavorite: item.isFavorite || false
+        }));
+        
+        setHistorial(data);
+      } catch (error) {
+        console.error('Error al obtener historial:', error);
+      }
+    };
+    
+    fetchHistorial();
+  }, [userId]);
+
   const filteredHistorial = historial.filter(item => {
     const matchesSearch = 
       item.originalText.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -87,23 +83,19 @@ export default function Historial() {
     return matchesSearch && matchesFavorites;
   });
 
-  const toggleFavorite = (id: string) => {
-    setHistorial(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
-      )
-    );
-  };
-
   const deleteItem = (id: string) => {
     Alert.alert(
       "Eliminar traducción",
       "¿Estás seguro de que quieres eliminar esta traducción?",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: () => {
-          setHistorial(prev => prev.filter(item => item.id !== id));
-        }}
+        { 
+          text: "Eliminar", 
+          style: "destructive", 
+          onPress: () => {
+            setHistorial(prev => prev.filter(item => item.id !== id));
+          }
+        }
       ]
     );
   };
@@ -138,11 +130,6 @@ export default function Historial() {
         <View style={styles.actions}>
           <Pressable 
             style={styles.actionButton}
-            onPress={() => toggleFavorite(item.id)}
-          >
-          </Pressable>
-          <Pressable 
-            style={styles.actionButton}
             onPress={() => deleteItem(item.id)}
           >
             <Ionicons name="trash-outline" size={20} color="#666" />
@@ -164,6 +151,11 @@ export default function Historial() {
           style={styles.filterButton}
           onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
         >
+          <Ionicons 
+            name={showFavoritesOnly ? "star" : "star-outline"} 
+            size={24} 
+            color={showFavoritesOnly ? "#FFD700" : "#666"} 
+          />
         </Pressable>
       </View>
 
