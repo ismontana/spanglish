@@ -68,7 +68,7 @@ export default function Ajustes() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Ajustes</Text>

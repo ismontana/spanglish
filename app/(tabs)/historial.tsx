@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -84,19 +83,13 @@ export default function Historial() {
   });
 
   const deleteItem = (id: string) => {
-    Alert.alert(
-      "Eliminar traducción",
-      "¿Estás seguro de que quieres eliminar esta traducción?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Eliminar", 
-          style: "destructive", 
-          onPress: () => {
-            setHistorial(prev => prev.filter(item => item.id !== id));
-          }
-        }
-      ]
+    setHistorial(prev => prev.filter(item => item.id !== id));
+    axios.post('http://localhost:4000/conversaciones/borrarconversacion', {
+      id_conversacion: id
+    })
+      .then(() => {
+        console.log('Traducción eliminada correctamente');
+      }
     );
   };
 
@@ -143,7 +136,7 @@ export default function Historial() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Historial</Text>
