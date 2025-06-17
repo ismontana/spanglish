@@ -40,12 +40,20 @@ export default function UserPage() {
         {usuario ? usuario.correo || 'Email no disponible' : 'Cargando email...'}
       </Text>
       <TouchableOpacity onPress={() => {}} style={styles.button}>
-        <Text>
+        <Ionicons name="person-outline" size={24} color="black" />
+        <Text style={styles.optionText}>
             Editar perfil
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => {}} style={styles.button}>
+        <Ionicons name="watch-outline" size={24} color="black" />
+        <Text style={styles.optionText}>
+            Configurar reloj
+        </Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => {}} style={styles.buttonLogOut}>
-        <Text>
+        <Ionicons name="log-out-outline" size={24} color="black" />
+        <Text style={styles.optionText}>
             Cerrar sesión
         </Text>
       </TouchableOpacity>
@@ -60,18 +68,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20 
     },
     button: {
-        backgroundColor: '#e0e0e0',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 25
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 15,
+      backgroundColor: '#dee3f9',
+      borderRadius: 8,
+      marginVertical: 5
+    },
+    optionText: {
+      fontSize: 16,
+      marginLeft: 12,
     },
     buttonLogOut: {
-        backgroundColor: '#d4563b',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 10
+        flexDirection: 'row',
+      alignItems: 'center',
+      padding: 15,
+      backgroundColor: '#d4563b',
+      borderRadius: 8,
+      marginVertical: 5
     },
     emailText: {
         fontSize: 15,

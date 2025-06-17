@@ -20,11 +20,6 @@ export default function MenuScreen() {
         <Ionicons name="bookmark-outline" size={24} color="black" />
         <Text style={styles.optionText}>Historial</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/acerca')}>
-        <Ionicons name="help-circle-outline" size={24} color="black" />
-        <Text style={styles.optionText}>Acerca de</Text>
-      </TouchableOpacity>
       
       <TouchableOpacity style={styles.option} onPress={() => router.push('/user')}>
         <Ionicons name="person-outline" size={24} color="black" />
@@ -48,7 +43,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#dee3f9',
     borderRadius: 8,
     marginVertical: 5
   },
