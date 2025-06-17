@@ -3,11 +3,10 @@ export default {
     "name": "Spanglish",
     "slug": "Spanglish",
     "version": "1.0.0",
-    "orientation": "landscape",
     "icon": "./assets/images/icon.png",
     "scheme": "spanglish",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
