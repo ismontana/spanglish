@@ -1,6 +1,8 @@
+import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -20,18 +22,44 @@ export default function Ajustes() {
   const [vibration, setVibration] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
-  const [buttonFocus, setButtonFocus] = useState(null);
+  const [usuario_id, setUsuario_id] = useState()
 
+  useEffect(() => {
+      const fetchUsuario = async () => {
+        try {
+          const user = await getInfoUsuario();
+          if (user?.id) {
+            setUsuario_id(user.id);
+          }
+        } catch (error) {
+          console.error('Error al obtener usuario:', error);
+        }
+      };
+  
+      fetchUsuario();
+    }, []);
   const handleClearHistory = () => {
     Alert.alert(
       "Limpiar Historial",
       "¿Estás seguro de que quieres eliminar todo el historial de traducciones?",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: () => {
-          // Aquí iría la lógica para limpiar el historial
-          Alert.alert("Historial eliminado", "Se ha limpiado todo el historial de traducciones");
-        }}
+        { 
+          text: "Eliminar", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await axios.post(
+                process.env.BACKEND_URL_BASE + '/conversaciones/borrarhistorial', 
+                { id_usuario: usuario_id }
+              );
+              Alert.alert("Historial eliminado", "Se ha limpiado todo el historial de traducciones");
+            } catch (error) {
+              Alert.alert("Error", "Hubo un problema al eliminar el historial" + error);
+              console.error(error);
+            }
+          } 
+        }
       ]
     );
   };
@@ -69,7 +97,7 @@ export default function Ajustes() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()} >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
         </Pressable>
         <Text style={styles.headerTitle}>Ajustes</Text>

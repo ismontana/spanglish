@@ -4,7 +4,7 @@ export async function getInfoUsuario() {
   const email = "maria.gonzalez@example.com";
 
   try {
-    const response = await axios.post("http://localhost:4000/usuarios/obtenerusuario", {
+    const response = await axios.post(process.env.BACKEND_URL_BASE + "/usuarios/obtenerusuario", {
       correo: email,
     });
     return response.data;
@@ -13,3 +13,4 @@ export async function getInfoUsuario() {
     return null;
   }
 }
+

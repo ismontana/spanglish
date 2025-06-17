@@ -7,27 +7,22 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/')}>
         <Ionicons name="arrow-back" size={32} color="black" />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.option} onPress={() => router.push('/ajustes')}>
-        <Ionicons name="settings-outline" size={32} color="black" />
+        <Ionicons name="settings-outline" size={24} color="black" />
         <Text style={styles.optionText}>Ajustes</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.option} onPress={() => router.push('/historial')}>
-        <Ionicons name="bookmark-outline" size={32} color="black" />
+        <Ionicons name="bookmark-outline" size={24} color="black" />
         <Text style={styles.optionText}>Historial</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/acerca')}>
-        <Ionicons name="help-circle-outline" size={32} color="black" />
-        <Text style={styles.optionText}>Acerca de</Text>
       </TouchableOpacity>
       
       <TouchableOpacity style={styles.option} onPress={() => router.push('/user')}>
-        <Ionicons name="person-outline" size={32} color="black" />
+        <Ionicons name="person-outline" size={24} color="black" />
         <Text style={styles.optionText}>Mi perfil</Text>
       </TouchableOpacity>
     </View>
@@ -47,10 +42,13 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    padding: 15,
+    backgroundColor: '#dee3f9',
+    borderRadius: 8,
+    marginVertical: 5
   },
   optionText: {
-    fontSize: 20,
+    fontSize: 16,
     marginLeft: 12,
   },
 });

@@ -7,7 +7,7 @@ export default function Acerca() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
         <Ionicons name="arrow-back" size={32} color="black" />
       </TouchableOpacity>
       <Text style={styles.text}>Pantalla Acerca de</Text>
