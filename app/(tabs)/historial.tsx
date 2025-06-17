@@ -5,10 +5,10 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View
 } from 'react-native';
 
@@ -121,12 +121,12 @@ export default function Historial() {
       <View style={styles.itemFooter}>
         <Text style={styles.timestamp}>{formatTime(item.timestamp)}</Text>
         <View style={styles.actions}>
-          <TouchableOpacity 
+          <Pressable 
             style={styles.actionButton}
             onPress={() => deleteItem(item.id)}
           >
             <Ionicons name="trash-outline" size={20} color="#666" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -138,9 +138,9 @@ export default function Historial() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Historial</Text>
-        <TouchableOpacity 
+        <Pressable 
           style={styles.filterButton}
           onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
         >
@@ -149,7 +149,7 @@ export default function Historial() {
             size={24} 
             color={showFavoritesOnly ? "#FFD700" : "#666"} 
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Barra de búsqueda */}
@@ -163,9 +163,9 @@ export default function Historial() {
           placeholderTextColor="#999"
         />
         {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchText('')}>
+          <Pressable onPress={() => setSearchText('')}>
             <Ionicons name="close-circle" size={20} color="#666" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 

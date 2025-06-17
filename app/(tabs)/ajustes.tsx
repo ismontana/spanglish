@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TouchableOpacity,
+  Pressable,
   View
 } from 'react-native';
 
@@ -38,7 +38,6 @@ export default function Ajustes() {
   
       fetchUsuario();
     }, []);
-
   const handleClearHistory = () => {
     Alert.alert(
       "Limpiar Historial",
@@ -100,7 +99,7 @@ export default function Ajustes() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Ajustes</Text>
         <View style={styles.placeholder} />
       </View>
@@ -136,7 +135,7 @@ export default function Ajustes() {
             onValueChange={setSaveHistory}
           />
           
-          <TouchableOpacity style={styles.settingItem} onPress={handleClearHistory}>
+          <Pressable style={styles.settingItem} onPress={handleClearHistory}>
             <View style={styles.settingText}>
               <Text style={[styles.settingTitle, { color: '#ff4444' }]}>
                 Limpiar historial
@@ -146,7 +145,7 @@ export default function Ajustes() {
               </Text>
             </View>
             <Ionicons name="trash-outline" size={24} color="#ff4444" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Sección de Interfaz */}
@@ -172,27 +171,27 @@ export default function Ajustes() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información</Text>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <Pressable style={styles.settingItem}>
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Acerca de Spanglish</Text>
               <Text style={styles.settingSubtitle}>Versión 1.0.0</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
+          </Pressable>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <Pressable style={styles.settingItem}>
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Política de privacidad</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
+          </Pressable>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <Pressable style={styles.settingItem}>
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Términos de uso</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
