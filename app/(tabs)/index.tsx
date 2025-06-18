@@ -25,6 +25,11 @@ export default function WelcomeScreen() {
     Voice.onSpeechResults = e => {
       console.log('onSpeechResults: ', e);
       setText(e.value?.[0] ?? '');
+      const textoNuevo = e.value?.[0] ?? '';
+      if (textoNuevo.trim() !== '') { 
+      getTranslationFromBackend(textoNuevo);
+    }
+      
     };
     Voice.onSpeechError = e => {
       console.error('onSpeechError: ', e.error);
@@ -54,9 +59,10 @@ export default function WelcomeScreen() {
     }
     setIsTranslating(true);
     setError('');
+    console.log('este es el nuevo texto: ', originalText);
 
     try {      
-      const response = await axios.post('http://localhost:4000/traduccion/traducir', { // CAMBIA ESTA URL
+      const response = await axios.post('http://10.0.2.2:4000/traduccion/traducir', { 
         text: originalText,
         sourceLang: 'es', 
         targetLang: 'en', 
@@ -77,20 +83,13 @@ export default function WelcomeScreen() {
   };
 
   const onSpeechEnd = (e: any) => {
-    console.log('onSpeechEnd: ', e);
+    console.log('onSpeechEnd de aquiiii: ', e);
     setIsListening(false);
-    if (text.trim() !== '') { 
-      getTranslationFromBackend(text);
-    }
+    console.log('trim', text);    
   };
 
   const startListening = async () => {
     try {
-      const isAvailable = await Voice.isAvailable();
-      if (!isAvailable) {
-        Alert.alert('Error', 'El servicio de reconocimiento de voz no está disponible en este dispositivo.');
-        return;
-      }
       await Voice.start('es-MX');
     } catch (e) {
       console.error('Error al llamar a Voice.start: ', e as Error); 
