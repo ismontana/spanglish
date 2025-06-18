@@ -5,7 +5,7 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const { height, width } = Dimensions.get('window');
 
@@ -52,7 +52,28 @@ export default function WelcomeScreen() {
     };
 
     Voice.onSpeechError = (e) => {
-      console.error('onSpeechError: ', e.error);
+      if (e.error?.code === 'SpeechRecognitionNotAllowed') {
+        Alert.alert(
+          'Permiso denegado',
+          'Por favor, habilita el reconocimiento de voz en la configuración de tu dispositivo.'
+        );
+        return;
+      }
+      if (e.error?.code === 'SpeechRecognitionUnavailable') {
+        Alert.alert(
+          'Reconocimiento no disponible',
+          'El reconocimiento de voz no está disponible en este dispositivo.'
+        );
+        return; 
+      }
+      if (e.error?.code == "recognition_failed") {
+        Alert.alert(
+          'Error de reconocimiento',
+          'Hubo un problema al procesar tu voz. Por favor, inténtalo de nuevo.'
+        );
+        return;
+      }
+      console.error('onSpeechError chido: ', e.error?.code);
       setError(e.error?.message || 'Error en el reconocimiento de voz');
       setIsListening(false);
     };
@@ -69,7 +90,6 @@ export default function WelcomeScreen() {
         await Voice.stop();
       } else {
         console.log('Iniciando micrófono...');
-        // Limpiar timeout previo si existe
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
@@ -99,7 +119,6 @@ export default function WelcomeScreen() {
       if (response.data?.translatedText) {
         setTranslatedText(response.data.translatedText);
         
-        // Configurar timeout para detener el micrófono después de 2 segundos
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         
         timeoutRef.current = setTimeout(async () => {
@@ -132,6 +151,22 @@ export default function WelcomeScreen() {
         <Ionicons name="menu" size={32} color="black" />
       </Pressable>
 
+
+      <View style={styles.textDisplayContainer}>
+
+        <View style={styles.containerTextTraduct}>
+          {isTranslating && <ActivityIndicator size="small" color="#fff" style={{ marginTop: 10 }} />}
+
+          {translatedText && !isTranslating && (
+            <>
+              <Text style={styles.translatedTextLabel}>Traducido (EN):</Text>
+              <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
+            </>
+          )}
+
+          {error ? <Text style={styles.errorText}>No se pudo traducir</Text> : null}
+        </View>
+
       <Pressable style={styles.micButton} onPress={toggleListening}>
         <Ionicons 
           name={isListening ? "mic-off" : "mic"} 
@@ -139,41 +174,54 @@ export default function WelcomeScreen() {
           color={isListening ? "red" : "black"} 
         />
       </Pressable>
-
-      <View style={styles.textDisplayContainer}>
-        <Text style={styles.recognizedTextTitle}>Detectado (ES):</Text>
-        <Text style={styles.recognizedText}>
-          {text || (isListening ? "Escuchando..." : "Presiona el micrófono para hablar")}
-        </Text>
-
-        {isTranslating && <ActivityIndicator size="small" color="#fff" style={{ marginTop: 10 }} />}
-
-        {translatedText && !isTranslating && (
-          <>
-            <Text style={styles.translatedTextLabel}>Traducido (EN):</Text>
-            <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
-          </>
-        )}
-
-        {error ? <Text style={styles.errorText}>Error: {error}</Text> : null}
+      
+      <View style={styles.containerText}>
+          <Text style={styles.recognizedTextTitle}>Español:</Text>
+          <Text style={styles.recognizedText}>
+            {text || (isListening ? "Escuchando..." : "Presiona el micrófono para hablar")}
+          </Text>
+      </View>
       </View>
     </View>
   );
 }
 
-// ... (los estilos se mantienen igual)
 const styles = StyleSheet.create({
   container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  containerText: {
+    width: width * 0.8,
+    minHeight: 250,
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  containerTextTraduct: {
+    width: width * 0.8,
+    transform: [{ rotate: '180deg' }],
+    minHeight: 250,
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   micButton: {
-    position: 'absolute',
-    top: height / 2 - 50,
     alignSelf: 'center',
     width: 100,
     height: 100,
+    margin: 20,
     borderRadius: 50,
     backgroundColor: 'lightgray',
     justifyContent: 'center',
@@ -188,7 +236,7 @@ const styles = StyleSheet.create({
   },
   textDisplayContainer: { 
     position: 'absolute',
-    top: height * 0.2,
+    top: height * 0.1,
     alignItems: 'center',
     paddingHorizontal: 20,
     width: width * 0.8, 
@@ -207,7 +255,7 @@ const styles = StyleSheet.create({
   translatedTextLabel: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'lightgreen',
+    color: 'black',
     marginTop: 20,
     alignSelf: 'flex-start',
   },
