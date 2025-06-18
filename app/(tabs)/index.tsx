@@ -2,10 +2,10 @@ import config from '@/lib/config';
 import { Ionicons } from '@expo/vector-icons';
 import Voice from '@react-native-voice/voice';
 import axios from 'axios';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 
 const { height, width } = Dimensions.get('window');
 
@@ -16,7 +16,24 @@ export default function WelcomeScreen() {
   const [error, setError] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [selectedLangTo, setSelectedLangTo] = useState('en'); // Cambiado a 'en' para que el destino sea inglés por defecto si lo deseas
+  const [selectedLangFrom, setSelectedLangFrom] = useState('es'); // Cambiado a 'es' para que el origen sea español por defecto
+
   const router = useRouter();
+
+  const langs = [
+    { label: 'Español', value: 'es' },
+    { label: 'Inglés', value: 'en' },
+    { label: 'Francés', value: 'fr' },
+    { label: 'Alemán', value: 'de' },
+    { label: 'Italiano', value: 'it' },
+    { label: 'Portugués', value: 'pt' },
+    { label: 'Japonés', value: 'ja' },
+    { label: 'Árabe', value: 'ar' },
+    { label: 'Ruso', value: 'ru' },
+    { label: 'Coreano', value: 'ko' },
+    { label: 'Hindi', value: 'hi' },
+  ];
 
   useEffect(() => {
     return () => {
@@ -27,6 +44,7 @@ export default function WelcomeScreen() {
     };
   }, []);
 
+  // Este useEffect ahora depende de selectedLangFrom para reconfigurar Voice
   useEffect(() => {
     Voice.onSpeechStart = () => {
       console.log('onSpeechStart');
@@ -47,7 +65,7 @@ export default function WelcomeScreen() {
       const textoNuevo = e.value?.[0] ?? '';
       setText(textoNuevo);
       if (textoNuevo.trim() !== '') {
-        getTranslationFromBackend(textoNuevo);
+        getTranslationFromBackend(textoNuevo, selectedLangFrom, selectedLangTo);
       }
     };
 
@@ -78,10 +96,11 @@ export default function WelcomeScreen() {
       setIsListening(false);
     };
 
+    // Al limpiar, también destruimos y removemos los listeners
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
-  }, []);
+  }, [selectedLangFrom, selectedLangTo]); // Añadir selectedLangFrom y selectedLangTo como dependencias
 
   const toggleListening = async () => {
     try {
@@ -89,12 +108,13 @@ export default function WelcomeScreen() {
         console.log('Deteniendo micrófono manualmente...');
         await Voice.stop();
       } else {
-        console.log('Iniciando micrófono...');
+        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-        await Voice.start('es-MX');
+        // ¡Importante! Aquí usamos selectedLangFrom
+        await Voice.start(selectedLangFrom); 
       }
     } catch (e) {
       console.error('Error al alternar micrófono: ', e);
@@ -103,7 +123,7 @@ export default function WelcomeScreen() {
     }
   };
 
-  const getTranslationFromBackend = async (originalText: string) => {
+  const getTranslationFromBackend = async (originalText: string, from: string, to: string) => {
     if (!originalText || originalText.trim() === '') return;
 
     setIsTranslating(true);
@@ -112,9 +132,10 @@ export default function WelcomeScreen() {
     try {
       const response = await axios.post(config.BACKEND_URL_BASE + '/traduccion/', {
         text: originalText,
-        sourceLang: 'es',
-        targetLang: 'en',
+        sourceLang: from,
+        targetLang: to,
       });
+      console.log("mandado: ", originalText, " de ", from, " a ", to);
 
       if (response.data?.translatedText) {
         setTranslatedText(response.data.translatedText);
@@ -140,12 +161,23 @@ export default function WelcomeScreen() {
     }
   };
 
+  const _setSelectedLangFrom = (langFrom: string) => {
+    setSelectedLangFrom(langFrom);
+    console.log('Idioma de origen seleccionado:', langFrom); // Usar langFrom directamente
+  };
+
+  const _setSelectedLangTo = (langTo: string) => {
+    setSelectedLangTo(langTo);
+    console.log('Idioma de destino seleccionado:', langTo); // Usar langTo directamente
+  };
+
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['deepskyblue', 'red']}
-        style={StyleSheet.absoluteFill}
-      />
+      <ImageBackground
+      source={require('@/assets/images/background_claro.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
 
       <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
         <Ionicons name="menu" size={32} color="black" />
@@ -155,33 +187,73 @@ export default function WelcomeScreen() {
       <View style={styles.textDisplayContainer}>
 
         <View style={styles.containerTextTraduct}>
+          <View style={styles.optionsInCard}>
+            <Dropdown 
+              data={langs}
+              value={selectedLangTo}
+              onChange={item => _setSelectedLangTo(item.value)}
+              style={styles.dropdown}
+              labelField="label"
+              valueField="value"
+              placeholder={selectedLangTo}
+              itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+              containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)'}}
+            />
+            <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => {}}>
+              <Ionicons name="volume-high" size={24} color="#333" />
+            </Pressable>
+          </View>
           {isTranslating && <ActivityIndicator size="small" color="#fff" style={{ marginTop: 10 }} />}
 
           {translatedText && !isTranslating && (
             <>
-              <Text style={styles.translatedTextLabel}>Traducido (EN):</Text>
+              <Text style={styles.translatedTextLabel}>Traducido ({selectedLangTo}):</Text>
               <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
             </>
           )}
-
-          {error ? <Text style={styles.errorText}>No se pudo traducir</Text> : null}
         </View>
 
-      <Pressable style={styles.micButton} onPress={toggleListening}>
-        <Ionicons 
-          name={isListening ? "mic-off" : "mic"} 
-          size={48} 
-          color={isListening ? "red" : "black"} 
-        />
-      </Pressable>
+      <View style={styles.containerOptions}>
+        <Pressable style={styles.option} onPress={() => {}}>
+          <Ionicons name='repeat-outline' size={28} color="#333" />
+        </Pressable>
+        <Pressable style={styles.micButton} onPress={toggleListening}>
+          <Ionicons 
+            name={isListening ? "mic-off" : "mic"} 
+            size={48} 
+            color={isListening ? "red" : "black"} 
+          />
+        </Pressable>
+        <Pressable style={styles.option} onPress={() => {}}>
+          <Ionicons name='camera-outline' size={28} color="#333" />
+        </Pressable>
+        
+      </View>
+        <View style={styles.linea}></View>
       
       <View style={styles.containerText}>
-          <Text style={styles.recognizedTextTitle}>Español:</Text>
+          <View style={styles.optionsInCard}>
+            <Dropdown 
+              data={langs}
+              value={selectedLangFrom}
+              onChange={item => _setSelectedLangFrom(item.value)}
+              style={styles.dropdown}
+              labelField="label"
+              valueField="value"
+              placeholder={selectedLangFrom}
+              itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+              containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)'}}
+            />
+            <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => {}}>
+              <Ionicons name="volume-high" size={24} color="#333" />
+            </Pressable>
+          </View>
           <Text style={styles.recognizedText}>
             {text || (isListening ? "Escuchando..." : "Presiona el micrófono para hablar")}
           </Text>
       </View>
       </View>
+      </ImageBackground>
     </View>
   );
 }
@@ -191,14 +263,58 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
+    backgroundColor: 'rgba(28, 28, 28, 0.8)',
+  },
+  dropdown: { 
+    width: 120,
+    borderRadius: 15, 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    padding: 10
+  },
+  optionsInCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  containerOptions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  option: {
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+  },
+  linea: {
+    position: 'absolute',
+    top: height * 0.37,
+    zIndex: -1,
+    left: width * 0.1,
+    right: width * 0.1,
+    width: '80%',
+    height: 1,
+    backgroundColor: '#ccc',
+    marginVertical: 20
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   containerText: {
     width: width * 0.8,
     minHeight: 250,
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 10,
+    backgroundColor: 'rgba(222, 243, 255, 0.9)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -206,12 +322,13 @@ const styles = StyleSheet.create({
   },
   containerTextTraduct: {
     width: width * 0.8,
-    transform: [{ rotate: '180deg' }],
+    // transform: [{ rotate: '180deg' }],
     minHeight: 250,
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 10,
+    backgroundColor: 'rgba(218, 242, 255, 0.9)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -223,11 +340,11 @@ const styles = StyleSheet.create({
     height: 100,
     margin: 20,
     borderRadius: 50,
-    backgroundColor: 'lightgray',
+    backgroundColor: 'rgb(170, 237, 255)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'gray',
+    borderWidth: 0,
+    borderColor: 'blue',
   },
   menuButton: {
     position: 'absolute',
@@ -237,9 +354,15 @@ const styles = StyleSheet.create({
   textDisplayContainer: { 
     position: 'absolute',
     top: height * 0.1,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 40,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
     alignItems: 'center',
     paddingHorizontal: 20,
-    width: width * 0.8, 
+    width: width * 0.9, 
   },
   recognizedTextTitle: {
     fontSize: 18,

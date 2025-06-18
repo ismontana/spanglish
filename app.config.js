@@ -42,6 +42,17 @@ export default {
         }
       ],
       [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Poppins-Regular.ttf",
+            "./assets/fonts/Poppins-Bold.ttf",
+            "./assets/fonts/Poppins-Italic.ttf",
+            "./assets/fonts/Poppins-BoldItalic.ttf"
+          ]
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
