@@ -1,3 +1,4 @@
+import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -9,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View
 } from 'react-native';
 
@@ -49,7 +51,7 @@ export default function Historial() {
       try {
         if (!userId) return;
         
-        const response = await axios.post(process.env.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
+        const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
           id_usuario: userId
         });
         
@@ -84,7 +86,7 @@ export default function Historial() {
 
   const deleteItem = (id: string) => {
     setHistorial(prev => prev.filter(item => item.id !== id));
-    axios.post(process.env.BACKEND_URL_BASE + '/conversaciones/borrarconversacion', {
+    axios.post(config.BACKEND_URL_BASE + '/conversaciones/borrarconversacion', {
       id_conversacion: id
     })
       .then(() => {
@@ -138,7 +140,7 @@ export default function Historial() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
-        </Pressable>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Historial</Text>
         <Pressable 
           style={styles.filterButton}

@@ -1,10 +1,11 @@
 import axios from "axios";
+import config from "./config";
 
 export async function getInfoUsuario() {
   const email = "maria.gonzalez@example.com";
 
   try {
-    const response = await axios.post(process.env.BACKEND_URL_BASE + "/usuarios/obtenerusuario", {
+    const response = await axios.post(config.BACKEND_URL_BASE + "/usuarios/obtenerusuario", {
       correo: email,
     });
     return response.data;

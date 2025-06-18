@@ -8,7 +8,11 @@ export default {
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ismontana.Spanglish",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Esta aplicación necesita acceso al reconocimiento de voz para traducir lo que dices a otro idioma."
+      }
     },
     "android": {
       "adaptiveIcon": {

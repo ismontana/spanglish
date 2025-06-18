@@ -1,3 +1,4 @@
+import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -5,11 +6,12 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  Pressable,
+  TouchableOpacity,
   View
 } from 'react-native';
 
@@ -50,7 +52,7 @@ export default function Ajustes() {
           onPress: async () => {
             try {
               await axios.post(
-                process.env.BACKEND_URL_BASE + '/conversaciones/borrarhistorial', 
+                config.BACKEND_URL_BASE + '/conversaciones/borrarhistorial', 
                 { id_usuario: usuario_id }
               );
               Alert.alert("Historial eliminado", "Se ha limpiado todo el historial de traducciones");
@@ -99,7 +101,7 @@ export default function Ajustes() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color="#333" />
-        </Pressable>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Ajustes</Text>
         <View style={styles.placeholder} />
       </View>

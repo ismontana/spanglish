@@ -1,25 +1,32 @@
+import config from '@/lib/config';
 import { Ionicons } from '@expo/vector-icons';
 import Voice from '@react-native-voice/voice';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native';
-import { getInfoUsuario } from '@/lib/utils';
+import { ActivityIndicator, Alert, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const [translationTimeout, setTranslationTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    return () => {
+      if (translationTimeout) {
+        clearTimeout(translationTimeout);
+      }
+    };
+  }, [translationTimeout]);
 
+  useEffect(() => {
     Voice.onSpeechStart = onSpeechStart;
     Voice.onSpeechEnd = onSpeechEnd;
     Voice.onSpeechResults = e => {
@@ -62,7 +69,7 @@ export default function WelcomeScreen() {
     console.log('este es el nuevo texto: ', originalText);
 
     try {      
-      const response = await axios.post('http://10.0.2.2:4000/traduccion/traducir', { 
+      const response = await axios.post(config.BACKEND_URL_BASE + '/traduccion/', { 
         text: originalText,
         sourceLang: 'es', 
         targetLang: 'en', 
@@ -70,6 +77,19 @@ export default function WelcomeScreen() {
 
       if (response.data && response.data.translatedText) {
         setTranslatedText(response.data.translatedText);
+        
+        // Configurar timeout para detener el micrófono después de 2 segundos
+        if (translationTimeout) {
+          clearTimeout(translationTimeout);
+        }
+        const timeout = setTimeout(() => {
+          if (isListening) {
+            Voice.stop();
+            setIsListening(false);
+          }
+        }, 2000);
+        setTranslationTimeout(timeout);
+        
       } else {
         throw new Error('Respuesta inesperada del servidor de traducción.');
       }
@@ -95,6 +115,13 @@ export default function WelcomeScreen() {
       console.error('Error al llamar a Voice.start: ', e as Error); 
       setError(JSON.stringify((e as Error).message || e)); 
       setIsListening(false);
+      
+      // Mensaje más amigable para el usuario
+      Alert.alert(
+        'Error de micrófono',
+        'No pudimos acceder al micrófono. Por favor verifica que la app tenga permisos para usar el micrófono.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
