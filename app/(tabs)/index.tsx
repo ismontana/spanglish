@@ -4,13 +4,13 @@ import Voice from '@react-native-voice/voice';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
-  const [translationTimeout, setTranslationTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
@@ -20,124 +20,109 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     return () => {
-      if (translationTimeout) {
-        clearTimeout(translationTimeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
+      Voice.destroy().then(Voice.removeAllListeners);
     };
-  }, [translationTimeout]);
+  }, []);
 
   useEffect(() => {
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechResults = e => {
-      console.log('onSpeechResults: ', e);
-      setText(e.value?.[0] ?? '');
-      const textoNuevo = e.value?.[0] ?? '';
-      if (textoNuevo.trim() !== '') { 
-      getTranslationFromBackend(textoNuevo);
-    }
-      
+    Voice.onSpeechStart = () => {
+      console.log('onSpeechStart');
+      setIsListening(true);
+      setError('');
+      setText('');
+      setTranslatedText('');
+      setIsTranslating(false);
     };
-    Voice.onSpeechError = e => {
-      console.error('onSpeechError: ', e.error);
-      setError(JSON.stringify(e.error));
+
+    Voice.onSpeechEnd = () => {
+      console.log('onSpeechEnd');
       setIsListening(false);
     };
 
+    Voice.onSpeechResults = (e) => {
+      console.log('onSpeechResults: ', e);
+      const textoNuevo = e.value?.[0] ?? '';
+      setText(textoNuevo);
+      if (textoNuevo.trim() !== '') {
+        getTranslationFromBackend(textoNuevo);
+      }
+    };
+
+    Voice.onSpeechError = (e) => {
+      console.error('onSpeechError: ', e.error);
+      setError(e.error?.message || 'Error en el reconocimiento de voz');
+      setIsListening(false);
+    };
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
   }, []);
 
-  const onSpeechStart = (e: any) => {
-    console.log('onSpeechStart: ', e);
-    setIsListening(true);
-    setError('');
-    setText('');
-    setTranslatedText('');
-    setIsTranslating(false);
+  const toggleListening = async () => {
+    try {
+      if (isListening) {
+        console.log('Deteniendo micrófono manualmente...');
+        await Voice.stop();
+      } else {
+        console.log('Iniciando micrófono...');
+        // Limpiar timeout previo si existe
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        await Voice.start('es-MX');
+      }
+    } catch (e) {
+      console.error('Error al alternar micrófono: ', e);
+      setError((e as Error).message || 'Error al alternar micrófono');
+      setIsListening(false);
+    }
   };
 
   const getTranslationFromBackend = async (originalText: string) => {
-    if (!originalText || originalText.trim() === '') {
-      console.log('No hay texto original para traducir.');
-      return;
-    }
+    if (!originalText || originalText.trim() === '') return;
+
     setIsTranslating(true);
     setError('');
-    console.log('este es el nuevo texto: ', originalText);
 
-    try {      
-      const response = await axios.post(config.BACKEND_URL_BASE + '/traduccion/', { 
+    try {
+      const response = await axios.post(config.BACKEND_URL_BASE + '/traduccion/', {
         text: originalText,
-        sourceLang: 'es', 
-        targetLang: 'en', 
+        sourceLang: 'es',
+        targetLang: 'en',
       });
 
-      if (response.data && response.data.translatedText) {
+      if (response.data?.translatedText) {
         setTranslatedText(response.data.translatedText);
         
         // Configurar timeout para detener el micrófono después de 2 segundos
-        if (translationTimeout) {
-          clearTimeout(translationTimeout);
-        }
-        const timeout = setTimeout(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        
+        timeoutRef.current = setTimeout(async () => {
           if (isListening) {
-            Voice.stop();
-            setIsListening(false);
+            try {
+              await Voice.stop();
+              console.log('Micrófono detenido automáticamente después de traducción');
+            } catch (e) {
+              console.error('Error al detener micrófono automáticamente:', e);
+            }
           }
         }, 2000);
-        setTranslationTimeout(timeout);
-        
-      } else {
-        throw new Error('Respuesta inesperada del servidor de traducción.');
       }
-    } catch (err: any) { 
-      console.error('Error al obtener traducción del backend:', err);
-      setError('Error al traducir: ' + (axios.isAxiosError(err) && err.response ? JSON.stringify(err.response.data) : err.message));
-      setTranslatedText(''); 
+    } catch (err) {
+      console.error('Error al traducir:', err);
+      setError('Error al traducir: ' + (err as Error).message);
     } finally {
       setIsTranslating(false);
     }
   };
 
-  const onSpeechEnd = (e: any) => {
-    console.log('onSpeechEnd de aquiiii: ', e);
-    setIsListening(false);
-    console.log('trim', text);    
-  };
-
-  const startListening = async () => {
-    try {
-      await Voice.start('es-MX');
-    } catch (e) {
-      console.error('Error al llamar a Voice.start: ', e as Error); 
-      setError(JSON.stringify((e as Error).message || e)); 
-      setIsListening(false);
-      
-      // Mensaje más amigable para el usuario
-      Alert.alert(
-        'Error de micrófono',
-        'No pudimos acceder al micrófono. Por favor verifica que la app tenga permisos para usar el micrófono.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  const backTest = async () => {
-    const textoPrueba = 'Si funciona esta cosa'
-    setText(textoPrueba);
-    setIsListening(false);
-    setTranslatedText('');
-    setError('');
-    await getTranslationFromBackend(textoPrueba);
-  
-  }
-
   return (
     <View style={styles.container}>
-
       <LinearGradient
         colors={['deepskyblue', 'red']}
         style={StyleSheet.absoluteFill}
@@ -146,27 +131,43 @@ export default function WelcomeScreen() {
       <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
         <Ionicons name="menu" size={32} color="black" />
       </Pressable>
-      <Pressable style={styles.micButton} onPress={startListening}>
-        <Ionicons name="mic" size={48} color="black" />
+
+      <Pressable style={styles.micButton} onPress={toggleListening}>
+        <Ionicons 
+          name={isListening ? "mic-off" : "mic"} 
+          size={48} 
+          color={isListening ? "red" : "black"} 
+        />
       </Pressable>
+
       <View style={styles.textDisplayContainer}>
         <Text style={styles.recognizedTextTitle}>Detectado (ES):</Text>
         <Text style={styles.recognizedText}>
           {text || (isListening ? "Escuchando..." : "Presiona el micrófono para hablar")}
         </Text>
+
         {isTranslating && <ActivityIndicator size="small" color="#fff" style={{ marginTop: 10 }} />}
+
         {translatedText && !isTranslating && (
-          <Text style={styles.translatedTextLabel}>Traducido (EN):</Text>
+          <>
+            <Text style={styles.translatedTextLabel}>Traducido (EN):</Text>
+            <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
+          </>
         )}
-        {translatedText && !isTranslating && <Text style={styles.translatedTextDisplay}>{translatedText}</Text>}
+
         {error ? <Text style={styles.errorText}>Error: {error}</Text> : null}
-      </View>      
+      </View>
     </View>
   );
 }
 
+// ... (los estilos se mantienen igual)
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   micButton: {
     position: 'absolute',
     top: height / 2 - 50,
@@ -195,10 +196,14 @@ const styles = StyleSheet.create({
   recognizedTextTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
     alignSelf: 'flex-start', 
   },
-  recognizedText: { fontSize: 24, color: 'white', textAlign: 'center', marginTop: 10, minHeight: 60 },
+  recognizedText: { 
+    fontSize: 24, 
+    textAlign: 'center', 
+    marginTop: 10, 
+    minHeight: 60 
+  },
   translatedTextLabel: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -211,11 +216,13 @@ const styles = StyleSheet.create({
     color: 'black', 
     textAlign: 'center',
     marginTop: 10,
-    minHeight: 60
+    minHeight: 60,
+    padding: 10,
+    borderRadius: 10,
   },
   errorText: {
     color: 'yellow', 
     marginTop: 10,
     textAlign: 'center',
   },
-}); 
+});
