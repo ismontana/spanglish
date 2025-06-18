@@ -27,19 +27,20 @@ export default function Ajustes() {
   const [usuario_id, setUsuario_id] = useState()
 
   useEffect(() => {
-      const fetchUsuario = async () => {
-        try {
-          const user = await getInfoUsuario();
-          if (user?.id) {
-            setUsuario_id(user.id);
-          }
-        } catch (error) {
-          console.error('Error al obtener usuario:', error);
-        }
-      };
-  
-      fetchUsuario();
-    }, []);
+    const fetchUsuario = async () => {
+      try {
+        const user = await getInfoUsuario();
+        if (user?.id) {
+        setUsuario_id(user.id);
+      }
+      } catch (error) {
+        console.error('Error al obtener usuario:', error);
+      }
+    };
+
+    fetchUsuario();
+  }, []);
+
   const handleClearHistory = () => {
     Alert.alert(
       "Limpiar Historial",
