@@ -142,7 +142,6 @@ function RegisterScreenContent() {
     } catch (err: any) {
       console.error("Error en pre-registro:", err)
 
-      // Manejar error específico de email duplicado
       if (err.response?.status === 409) {
         Alert.alert(
           "Email ya registrado",
@@ -165,7 +164,6 @@ function RegisterScreenContent() {
     }
   }
 
-  // Handlers de focus (mantener los mismos)
   const handleNameFocus = useCallback(() => {
     Animated.timing(nameFocusAnim, {
       toValue: 1,
