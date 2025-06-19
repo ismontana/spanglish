@@ -1,3 +1,4 @@
+import { GOOGLE_TRANSLATE_LANGUAGES } from '@/constants/languages';
 import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -236,7 +237,7 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={require('@/assets/images/background_claro.png')}
+        source={require('@/assets/images/back_claro.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -248,7 +249,7 @@ export default function WelcomeScreen() {
           <View style={styles.containerTextTraduct}>
             <View style={styles.optionsInCard}>
               <Dropdown
-                data={langs}
+                data={GOOGLE_TRANSLATE_LANGUAGES}
                 value={selectedLangTo}
                 onChange={item => _setSelectedLangTo(item.value)}
                 style={styles.dropdown}
@@ -292,7 +293,7 @@ export default function WelcomeScreen() {
           <View style={styles.containerText}>
             <View style={styles.optionsInCard}>
               <Dropdown
-                data={langs}
+                data={GOOGLE_TRANSLATE_LANGUAGES}
                 value={selectedLangFrom}
                 onChange={item => _setSelectedLangFrom(item.value)}
                 style={styles.dropdown}

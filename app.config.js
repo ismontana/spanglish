@@ -11,7 +11,8 @@ export default {
       "supportsTablet": true,
       "bundleIdentifier": "com.ismontana.Spanglish",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Esta aplicación necesita acceso al reconocimiento de voz para traducir lo que dices a otro idioma."
+        "NSSpeechRecognitionUsageDescription": "Esta aplicación necesita acceso al reconocimiento de voz para traducir lo que dices a otro idioma.",
+        "NSMicrophoneUsageDescription": "Esta aplicación necesita acceso a tu micrófono para el reconocimiento de voz."
       }
     },
     "android": {
@@ -39,17 +40,6 @@ export default {
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
-        }
-      ],
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/fonts/Poppins-Regular.ttf",
-            "./assets/fonts/Poppins-Bold.ttf",
-            "./assets/fonts/Poppins-Italic.ttf",
-            "./assets/fonts/Poppins-BoldItalic.ttf"
-          ]
         }
       ],
       [

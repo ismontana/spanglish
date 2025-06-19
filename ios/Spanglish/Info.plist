@@ -6,8 +6,6 @@
     <true/>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Esta aplicación necesita acceso al reconocimiento de voz para traducir lo que dices a otro idioma.</string>
     <key>CFBundleDisplayName</key>
     <string>Spanglish</string>
     <key>CFBundleExecutable</key>
@@ -53,6 +51,10 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Esta aplicación necesita acceso a tu micrófono para el reconocimiento de voz.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Esta aplicación necesita acceso al reconocimiento de voz para traducir lo que dices a otro idioma.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

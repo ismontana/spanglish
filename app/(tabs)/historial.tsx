@@ -54,6 +54,11 @@ export default function Historial() {
         const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
           id_usuario: userId
         });
+        console.log('Historial obtenido:', response.data);
+        if (response.data.error === 'No se encontraron conversaciones') {
+          console.log('no hay historial:', response.data.error);
+          return;
+        }
         
         const data = response.data.map((item: any) => ({
           id: item.id.toString(),
