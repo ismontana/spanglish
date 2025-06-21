@@ -32,6 +32,8 @@ export default {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-web-browser",
+      "expo-secure-store",
       "expo-router",
       [
         "expo-splash-screen",
@@ -42,21 +44,6 @@ export default {
           "backgroundColor": "#ffffff"
         }
       ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "manifest": {
-              "xmlns:tools": "http://schemas.android.com/tools"
-            },
-            application: {
-              "tools:replace": "android:appComponentFactory",
-            },
-            "useAndroidX": true,
-            "enableJetifier": true
-          },
-        },
-        ],
     ],
     "experiments": {
       "typedRoutes": true
