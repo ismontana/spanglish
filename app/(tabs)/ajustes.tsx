@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/theme/themeContext';
 import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,15 +18,15 @@ import {
 
 export default function Ajustes() {
   const router = useRouter();
-  
-  // Estados para los ajustes
+    // Estados para los ajustes
   const [autoTranslate, setAutoTranslate] = useState(true);
   const [saveHistory, setSaveHistory] = useState(true);
   const [vibration, setVibration] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
   const [usuario_id, setUsuario_id] = useState()
-
+  const {theme, toggleTheme} = useTheme()
+  
   useEffect(() => {
     const fetchUsuario = async () => {
       try {
@@ -80,9 +81,9 @@ export default function Ajustes() {
     onValueChange?: (value: boolean) => void;
     type?: 'switch' | 'button';
   }) => (
-    <View style={styles.settingItem}>
-      <View style={styles.settingText}>
-        <Text style={styles.settingTitle}>{title}</Text>
+    <View style={[styles.settingItem, { backgroundColor: theme.background }]}>
+      <View style={[styles.settingText]}>
+        <Text style={[styles.settingTitle, {color:theme.text}]}>{title}</Text>
         {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
       </View>
       {type === 'switch' && (
@@ -97,13 +98,13 @@ export default function Ajustes() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: theme.background}]}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+      <View style={[styles.header, {backgroundColor: theme.background}]}>
+        <TouchableOpacity style={[styles.backButton]} onPress={() => router.push('/menu')}>
+          <Ionicons name="arrow-back" size={28} color={theme.tabIconDefault} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ajustes</Text>
+        <Text style={[styles.headerTitle, {color:theme.text}]}>Ajustes</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -138,9 +139,9 @@ export default function Ajustes() {
             onValueChange={setSaveHistory}
           />
           
-          <Pressable style={styles.settingItem} onPress={handleClearHistory}>
-            <View style={styles.settingText}>
-              <Text style={[styles.settingTitle, { color: '#ff4444' }]}>
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]} onPress={handleClearHistory}>
+            <View style={[styles.settingText]}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>
                 Limpiar historial
               </Text>
               <Text style={styles.settingSubtitle}>
@@ -159,7 +160,23 @@ export default function Ajustes() {
             title="Modo oscuro"
             subtitle="Cambiar a tema oscuro"
             value={darkMode}
-            onValueChange={setDarkMode}
+            onValueChange={async (value) => {
+    setDarkMode(value);             // (si lo necesitas localmente)
+    toggleTheme();                  // cambia el tema visualmente
+
+    try {
+      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          'usuario_id': 3,
+          'modo_oscuro': value ? 1 : 0,
+        }),
+      });
+    } catch (error) {
+      console.error('Error actualizandoo modo oscuro en backend', error);
+    }
+  }}
           />
           
           <SettingItem
@@ -174,24 +191,24 @@ export default function Ajustes() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información</Text>
           
-          <Pressable style={styles.settingItem}>
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]}>
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Acerca de Spanglish</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Acerca de Spanglish</Text>
               <Text style={styles.settingSubtitle}>Versión 1.0.0</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </Pressable>
           
-          <Pressable style={styles.settingItem}>
+          <Pressable style= {[styles.settingItem, {backgroundColor:theme.background}]}>
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Política de privacidad</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Política de privacidad</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </Pressable>
           
-          <Pressable style={styles.settingItem}>
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]}>
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Términos de uso</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Términos de uso</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </Pressable>
@@ -204,7 +221,7 @@ export default function Ajustes() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor:'#fff',
   },
   header: {
     flexDirection: 'row',
@@ -219,6 +236,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+
   },
   headerTitle: {
     fontSize: 20,
@@ -254,6 +272,7 @@ const styles = StyleSheet.create({
   },
   settingText: {
     flex: 1,
+    color: '#444'
   },
   settingTitle: {
     fontSize: 16,

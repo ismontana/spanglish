@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/theme/themeContext';
 import { GOOGLE_TRANSLATE_LANGUAGES } from '@/constants/languages';
 import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
@@ -8,10 +9,10 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-
 const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const {theme, toggleTheme} = useTheme()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -23,6 +24,8 @@ export default function WelcomeScreen() {
   const [usuario_id, setUsuario_id] = useState<number | null>(null);
 
   const finalRecognizedText = useRef<string>('');
+
+
 
   useEffect(() => {
     const fetchUsuario = async () => {
@@ -256,7 +259,7 @@ export default function WelcomeScreen() {
                 labelField="label"
                 valueField="value"
                 placeholder={selectedLangTo}
-                itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+                itemContainerStyle={{ borderRadius: 15, backgroundColor: theme.background }}
                 containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)' }}
               />
               <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => { }}>
