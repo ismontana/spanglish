@@ -1,6 +1,6 @@
 import { useTheme } from '@/app/theme/themeContext';
 import config from '@/lib/config';
-import { getInfoUsuario } from '@/lib/utils';
+import { getAjustesUsuario, getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
@@ -32,6 +32,7 @@ export default function Ajustes() {
       try {
         const user = await getInfoUsuario();
         if (user?.id) {
+          
         setUsuario_id(user.id);
       }
       } catch (error) {
@@ -41,6 +42,20 @@ export default function Ajustes() {
 
     fetchUsuario();
   }, []);
+
+   useEffect(() => {
+   const initAjustes = async () => {
+     const user = await getInfoUsuario();
+     if (user?.id) {
+       const ajustes = await getAjustesUsuario(user.id);
+       console.log("Ajustes obtenidos:", ajustes);
+
+       if (ajustes) setDarkMode(ajustes.modo_oscuro === 1);
+     }
+   };
+   initAjustes();
+ }, []);
+
 
   const handleClearHistory = () => {
     Alert.alert(

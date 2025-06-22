@@ -14,7 +14,7 @@ export default function MenuScreen() {
     icon,
     title,
     onPress,
-    color = "#0066CC",
+    color = "#0a1e55",
   }: {
     icon: string
     title: string

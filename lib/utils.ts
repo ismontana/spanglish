@@ -20,3 +20,15 @@ export async function getInfoUsuario() {
     return null;
   }
 }
+
+export async function getAjustesUsuario(usuario_id:any) {
+  try {
+    const response = await axios.get(`http://192.168.1.74:4000/usuarios/obtener/${usuario_id}`);
+    return response.data;
+    
+  } catch (error) {
+    
+    console.error('Error al obtener ajustes del usuario perro:', error);
+    return null;
+  }
+}
