@@ -134,7 +134,8 @@ export default function WelcomeScreen() {
         );
         return;
       }
-      console.error('onSpeechError chido: ', e);
+      console.error('codigo de error: ', e.error?.code, "mensaje:", e.error?.message        
+      );
       setError(e.error?.message || 'Error en el reconocimiento de voz');
       setIsListening(false);
     };
