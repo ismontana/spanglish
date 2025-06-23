@@ -42,6 +42,7 @@ export default function WelcomeScreen() {
         if (user?.id) {
           setUsuario_id(user.id);
         }
+        
       } catch (error) {
         console.error('Error al obtener usuario:', error);
       }
@@ -67,13 +68,13 @@ export default function WelcomeScreen() {
   ];
 
   const saveConversation = async (original: string, translated: string, from: string, to: string) => {
-    if (!usuario_id || !original || original.trim() === '' || !translated || translated.trim() === '') {
+    if (!usuarioIdRef || !original || original.trim() === '' || !translated || translated.trim() === '') {
       console.warn('Faltan datos o están vacíos para guardar la conversación. Saltando:', { usuario_id, original, translated });
       return null;
     }
     try {
       const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/add', {
-        usuario_id: usuario_id,
+        usuario_id: usuarioIdRef.current,
         texto_original: original,
         texto_traducido: translated,
         idioma_origen: from,
