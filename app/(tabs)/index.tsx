@@ -1,4 +1,6 @@
+import { useTheme } from '@/app/theme/themeContext';
 import { GOOGLE_TRANSLATE_LANGUAGES } from '@/constants/languages';
+import { darkTheme } from '@/constants/theme';
 import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,12 +10,13 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-
 const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const {theme, toggleTheme} = useTheme()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
+  const [isdark, setDarkMode] = useState(false)
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
   const [translatedText, setTranslatedText] = useState('');
@@ -21,11 +24,15 @@ export default function WelcomeScreen() {
   const [selectedLangTo, setSelectedLangTo] = useState('en');
   const [selectedLangFrom, setSelectedLangFrom] = useState('es');
   const [usuario_id, setUsuario_id] = useState<number | null>(null);
+
   
     // Refs para pasar datos dinámicos a los listeners sin causar re-renders.
     const langFromRef = useRef(selectedLangFrom);
     const langToRef = useRef(selectedLangTo);
     const usuarioIdRef = useRef(usuario_id);
+
+  const finalRecognizedText = useRef<string>('');
+
 
 
   useEffect(() => {
@@ -222,19 +229,23 @@ export default function WelcomeScreen() {
     console.log('Idiomas intercambiados - Origen:', tempTo, 'Destino:', tempFrom);
   };
 
+  const backgroundImage = theme === darkTheme  
+    ? require('@/assets/images/back_oscuro.png')  // imagen para modo oscuro
+    : require('@/assets/images/back_claro.png');
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container,{backgroundColor: theme.background}]}>
       <ImageBackground
-        source={require('@/assets/images/back_claro.png')}
+        source={backgroundImage}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
         <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
-          <Ionicons name="menu" size={32} color="black" />
+          <Ionicons name="menu" size={32} color={theme.primary} />
         </Pressable>
 
-        <View style={styles.textDisplayContainer}>
-          <View style={styles.containerTextTraduct}>
+        <View style={[styles.textDisplayContainer, {backgroundColor:theme.background}]}>
+          <View style={[styles.containerTextTraduct, {backgroundColor:theme.secondary}]}>
             <View style={styles.optionsInCard}>
               <Dropdown
                 data={GOOGLE_TRANSLATE_LANGUAGES}
@@ -244,7 +255,7 @@ export default function WelcomeScreen() {
                 labelField="label"
                 valueField="value"
                 placeholder={selectedLangTo}
-                itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+                itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 1)' }}
                 containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)' }}
               />
               <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => { }}>
@@ -262,23 +273,42 @@ export default function WelcomeScreen() {
           </View>
 
           <View style={styles.containerOptions}>
-            <Pressable style={styles.option} onPress={() => toggleLanguage()}>
-              <Ionicons name='repeat-outline' size={28} color="#333" />
+            <Pressable style={[styles.option, {backgroundColor: theme.background}]} onPress={() => toggleLanguage()}>
+              <Ionicons name='repeat-outline' size={28} color={theme.text} />
             </Pressable>
-            <Pressable style={styles.micButton} onPress={toggleListening}>
+            <Pressable style={[styles.micButton, {backgroundColor:theme.primary2}]} onPress={toggleListening}>
               <Ionicons
                 name={isListening ? "mic-off" : "mic"}
                 size={48}
-                color={isListening ? "red" : "black"}
+                color={isListening ? "red" : theme.text}
               />
             </Pressable>
-            <Pressable style={styles.option} onPress={() => { }}>
-              <Ionicons name='sunny-outline' size={28} color="#333" />
-            </Pressable>
-          </View>
-          <View style={styles.linea}></View>
+            <Pressable
+  style={[styles.option, {backgroundColor: theme.background}]}
+  onPress={async () => {
+    const newValue = !isdark; // Inviertes el valor actual
+    setDarkMode(newValue);      // Cambias el estado local
+    toggleTheme();              // Cambias el tema visualmente
 
-          <View style={styles.containerText}>
+    try {
+      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          'usuario_id': 3,
+          'modo_oscuro': newValue ? 1 : 0,
+        }),
+      });
+    } catch (error) {
+      console.error('Error actualizandoo modo oscuro en backend', error);
+    }
+  }}
+>
+  <Ionicons name='sunny-outline' size={28} color={theme.text} />
+</Pressable>
+          </View>
+
+          <View style={[styles.containerText, {backgroundColor:theme.secondary}]}>
             <View style={styles.optionsInCard}>
               <Dropdown
                 data={GOOGLE_TRANSLATE_LANGUAGES}
@@ -295,7 +325,7 @@ export default function WelcomeScreen() {
                 <Ionicons name="volume-high" size={24} color="#333" />
               </Pressable>
             </View>
-            <Text style={styles.recognizedText}>
+            <Text style={[styles.recognizedText, {color:theme.text2}]}>
               {text || (isListening ? "Escuchando..." : "Presiona el micrófono para hablar")}
             </Text>
           </View>

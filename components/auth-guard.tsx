@@ -4,10 +4,9 @@ import type React from "react"
 
 import { getInfoUsuario } from "@/lib/utils"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
-import { Animated, StyleSheet, Text, View } from "react-native"
+import { Animated, ImageBackground, StyleSheet, Text, View } from "react-native"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -30,7 +29,7 @@ export function AuthGuard({ children, redirectTo = "/user", reverse = false }: A
         if (reverse) {
           // Si reverse=true, redirigir cuando SÍ está autenticado (para login/register)
           if (isAuthenticated) {
-            router.replace(redirectTo as any)
+            router.replace({ pathname: redirectTo } as any)
             return
           } else {
             setShouldRender(true)
@@ -84,11 +83,10 @@ export function AuthGuard({ children, redirectTo = "/user", reverse = false }: A
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={reverse ? ["#667eea", "#764ba2"] : ["#11998e", "#38ef7d"]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <ImageBackground
+        source={require("@/assets/images/back_claro.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
       >
         <View style={styles.loadingContainer}>
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
@@ -96,7 +94,7 @@ export function AuthGuard({ children, redirectTo = "/user", reverse = false }: A
           </Animated.View>
           <Text style={styles.loadingText}>Verificando sesión...</Text>
         </View>
-      </LinearGradient>
+      </ImageBackground>
     )
   }
 
@@ -109,6 +107,9 @@ export function AuthGuard({ children, redirectTo = "/user", reverse = false }: A
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  backgroundImage: {
     flex: 1,
   },
   loadingContainer: {

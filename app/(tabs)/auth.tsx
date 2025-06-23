@@ -1,23 +1,23 @@
 "use client"
 
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll"
 import config from "@/lib/config"
 import { Ionicons } from "@expo/vector-icons"
 import axios from "axios"
-import { LinearGradient } from "expo-linear-gradient"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Alert,
   Animated,
-  Dimensions,
-  KeyboardAvoidingView,
+  Dimensions, ImageBackground, KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native"
 
 const { width, height } = Dimensions.get("window")
@@ -30,6 +30,7 @@ export default function AuthScreen() {
     contrasena: string
   }>()
   const router = useRouter()
+  const { scrollViewRef, registerInput, scrollToInput } = useKeyboardAwareScroll()
 
   const [codigo, setCodigo] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
@@ -174,7 +175,8 @@ export default function AuthScreen() {
       duration: 200,
       useNativeDriver: false,
     }).start()
-  }, [])
+    scrollToInput("code")
+  }, [scrollToInput])
 
   const handleInputBlur = useCallback(() => {
     Animated.timing(inputFocusAnim, {
@@ -190,104 +192,123 @@ export default function AuthScreen() {
   })
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <LinearGradient
-        colors={["#11998e", "#38ef7d"]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <View style={styles.container}>
+      {/* Fondo fijo */}
+      <ImageBackground
+        source={require("@/assets/images/back_claro.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+
+      {/* Back Button fijo */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Contenido scrollable */}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-            },
-          ]}
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="none" // Evitar que se cierre el teclado
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="mail-outline" size={60} color="#fff" />
-            </View>
-            <Text style={styles.title}>Verifica tu correo</Text>
-            <Text style={styles.subtitle}>
-              Hemos enviado un código de 7 dígitos a{"\n"}
-              <Text style={styles.email}>{correo}</Text>
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Code Input */}
-            <Animated.View
-              style={[
-                styles.inputContainer,
-                {
-                  borderColor: inputFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["rgba(255,255,255,0.3)", "#fff"],
-                  }),
-                  borderWidth: inputFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 2],
-                  }),
-                },
-              ]}
-            >
-              <Ionicons name="keypad-outline" size={20} color="rgba(255,255,255,0.8)" />
-              <TextInput
-                style={[styles.input, { fontSize: 18, letterSpacing: 2, textAlign: "center" }]}
-                placeholder="Código de 7 dígitos"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                value={codigo}
-                onChangeText={setCodigo}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                keyboardType="number-pad"
-                maxLength={7}
-              />
-            </Animated.View>
-
-            {/* Verify Button */}
-            <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
-              <TouchableOpacity
-                style={[styles.button, isVerifying && styles.buttonLoading]}
-                onPress={handleVerificar}
-                disabled={isVerifying}
-                activeOpacity={0.8}
-              >
-                {isVerifying ? (
-                  <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                    <Ionicons name="refresh-outline" size={20} color="#11998e" />
-                  </Animated.View>
-                ) : (
-                  <Text style={styles.buttonText}>Verificar Código</Text>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Resend Link */}
-            <TouchableOpacity
-              onPress={handleReenviar}
-              disabled={resendCooldown > 0}
-              style={styles.resendContainer}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
-                {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : "¿No recibiste el código? Reenviar"}
+          {/* Tarjeta principal */}
+          <Animated.View
+            style={[
+              styles.cardContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              },
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="mail-outline" size={60} color="#0066CC" />
+              </View>
+              <Text style={styles.title}>Verifica tu correo</Text>
+              <Text style={styles.subtitle}>
+                Hemos enviado un código de 7 dígitos a{"\n"}
+                <Text style={styles.email}>{correo}</Text>
               </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </LinearGradient>
-    </KeyboardAvoidingView>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Code Input */}
+              <Animated.View
+                style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: inputFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
+                    }),
+                    borderWidth: inputFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 2],
+                    }),
+                  },
+                ]}
+              >
+                <Ionicons name="keypad-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
+                <TextInput
+                  ref={(ref) => registerInput("code", ref)}
+                  style={[styles.input, { letterSpacing: 2 }]}
+                  placeholder="Código de 7 dígitos"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
+                  value={codigo}
+                  onChangeText={setCodigo}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  keyboardType="number-pad"
+                  maxLength={7}
+                  textAlign="center"
+                  blurOnSubmit={false}
+                />
+              </Animated.View>
+
+              {/* Verify Button */}
+              <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                <TouchableOpacity
+                  style={[styles.button, isVerifying && styles.buttonLoading]}
+                  onPress={handleVerificar}
+                  disabled={isVerifying}
+                  activeOpacity={0.8}
+                >
+                  {isVerifying ? (
+                    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                      <Ionicons name="refresh-outline" size={20} color="#fff" />
+                    </Animated.View>
+                  ) : (
+                    <Text style={styles.buttonText}>Verificar Código</Text>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Resend Link */}
+              <TouchableOpacity
+                onPress={handleReenviar}
+                disabled={resendCooldown > 0}
+                style={styles.resendContainer}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+                  {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : "¿No recibiste el código? Reenviar"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
@@ -295,51 +316,76 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gradient: {
+  backgroundImage: {
+    position: "absolute", // Fondo fijo
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  keyboardContainer: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 30,
+    alignItems: "center",
+    paddingVertical: 100, // Cambiar de 50 a 100
+    paddingHorizontal: 20,
+  },
+  cardContainer: {
+    width: width * 0.9,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   backButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    zIndex: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
     padding: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   header: {
     alignItems: "center",
-    marginBottom: 50,
+    marginBottom: 30,
   },
   iconContainer: {
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(0, 100, 200, 0.1)",
     borderRadius: 50,
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
     marginBottom: 12,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
     lineHeight: 24,
   },
   email: {
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
   },
   form: {
     width: "100%",
@@ -347,23 +393,23 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(240, 248, 255, 0.8)",
     borderRadius: 15,
     paddingHorizontal: 20,
     paddingVertical: 15,
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   input: {
     flex: 1,
     marginLeft: 15,
     fontSize: 18,
-    color: "#fff",
+    color: "#0066CC",
     fontWeight: "bold",
   },
   button: {
-    backgroundColor: "#fff",
+    backgroundColor: "#0066CC",
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: "center",
@@ -378,25 +424,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonLoading: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(0, 102, 204, 0.8)",
   },
   buttonText: {
-    color: "#11998e",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
   resendContainer: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   resendText: {
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(0, 100, 200, 0.8)",
     fontSize: 16,
     textAlign: "center",
     textDecorationLine: "underline",
   },
   resendTextDisabled: {
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(0, 100, 200, 0.5)",
     textDecorationLine: "none",
   },
 })

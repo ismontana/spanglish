@@ -2,24 +2,23 @@
 
 import { AuthGuard } from "@/components/auth-guard"
 import { GOOGLE_TRANSLATE_LANGUAGES, type Language } from "@/constants/languages"
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll"
 import config from "@/lib/config"
 import { Ionicons } from "@expo/vector-icons"
 import axios from "axios"
-import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Alert,
   Animated,
-  Dimensions,
-  KeyboardAvoidingView,
+  Dimensions, ImageBackground, KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native"
 import { Dropdown } from "react-native-element-dropdown"
 
@@ -27,6 +26,8 @@ const { width, height } = Dimensions.get("window")
 
 function RegisterScreenContent() {
   const router = useRouter()
+  const { scrollViewRef, registerInput, scrollToInput } = useKeyboardAwareScroll()
+
   const [nombre, setNombre] = useState("")
   const [correo, setCorreo] = useState("")
   const [idioma, setIdioma] = useState("es")
@@ -142,6 +143,7 @@ function RegisterScreenContent() {
     } catch (err: any) {
       console.error("Error en pre-registro:", err)
 
+      // Manejar error específico de email duplicado
       if (err.response?.status === 409) {
         Alert.alert(
           "Email ya registrado",
@@ -164,13 +166,15 @@ function RegisterScreenContent() {
     }
   }
 
+  // Handlers de focus con scroll
   const handleNameFocus = useCallback(() => {
     Animated.timing(nameFocusAnim, {
       toValue: 1,
       duration: 200,
       useNativeDriver: false,
     }).start()
-  }, [])
+    scrollToInput("name")
+  }, [scrollToInput])
 
   const handleNameBlur = useCallback(() => {
     Animated.timing(nameFocusAnim, {
@@ -186,7 +190,8 @@ function RegisterScreenContent() {
       duration: 200,
       useNativeDriver: false,
     }).start()
-  }, [])
+    scrollToInput("email")
+  }, [scrollToInput])
 
   const handleEmailBlur = useCallback(() => {
     Animated.timing(emailFocusAnim, {
@@ -202,7 +207,8 @@ function RegisterScreenContent() {
       duration: 200,
       useNativeDriver: false,
     }).start()
-  }, [])
+    scrollToInput("language")
+  }, [scrollToInput])
 
   const handleLanguageBlur = useCallback(() => {
     Animated.timing(languageFocusAnim, {
@@ -218,7 +224,8 @@ function RegisterScreenContent() {
       duration: 200,
       useNativeDriver: false,
     }).start()
-  }, [])
+    scrollToInput("password")
+  }, [scrollToInput])
 
   const handlePasswordBlur = useCallback(() => {
     Animated.timing(passwordFocusAnim, {
@@ -243,21 +250,42 @@ function RegisterScreenContent() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <LinearGradient
-        colors={["#11998e", "#38ef7d"]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Fondo fijo */}
+      <ImageBackground
+        source={require("@/assets/images/back_claro.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
 
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      {/* Back Button fijo */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Contenido scrollable */}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingVertical: 100,
+            paddingHorizontal: 20,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="none" // Evitar que se cierre el teclado
+        >
+          {/* Tarjeta principal */}
           <Animated.View
             style={[
-              styles.content,
+              styles.cardContainer,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
@@ -277,7 +305,7 @@ function RegisterScreenContent() {
                   {
                     borderColor: nameFocusAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["rgba(255,255,255,0.3)", "#fff"],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
                     }),
                     borderWidth: nameFocusAnim.interpolate({
                       inputRange: [0, 1],
@@ -286,16 +314,18 @@ function RegisterScreenContent() {
                   },
                 ]}
               >
-                <Ionicons name="person-outline" size={20} color="rgba(255,255,255,0.8)" />
+                <Ionicons name="person-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
                 <TextInput
+                  ref={(ref) => registerInput("name", ref)}
                   style={styles.input}
                   placeholder="Nombre completo"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
                   value={nombre}
                   onChangeText={setNombre}
                   onFocus={handleNameFocus}
                   onBlur={handleNameBlur}
                   autoCapitalize="words"
+                  blurOnSubmit={false}
                 />
               </Animated.View>
 
@@ -306,7 +336,7 @@ function RegisterScreenContent() {
                   {
                     borderColor: emailFocusAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["rgba(255,255,255,0.3)", "#fff"],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
                     }),
                     borderWidth: emailFocusAnim.interpolate({
                       inputRange: [0, 1],
@@ -315,17 +345,19 @@ function RegisterScreenContent() {
                   },
                 ]}
               >
-                <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.8)" />
+                <Ionicons name="mail-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
                 <TextInput
+                  ref={(ref) => registerInput("email", ref)}
                   style={styles.input}
                   placeholder="Correo electrónico"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
                   value={correo}
                   onChangeText={setCorreo}
                   onFocus={handleEmailFocus}
                   onBlur={handleEmailBlur}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  blurOnSubmit={false}
                 />
               </Animated.View>
 
@@ -336,7 +368,7 @@ function RegisterScreenContent() {
                   {
                     borderColor: languageFocusAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["rgba(255,255,255,0.3)", "#fff"],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
                     }),
                     borderWidth: languageFocusAnim.interpolate({
                       inputRange: [0, 1],
@@ -345,30 +377,32 @@ function RegisterScreenContent() {
                   },
                 ]}
               >
-                <Ionicons name="language-outline" size={20} color="rgba(255,255,255,0.8)" />
-                <Dropdown
-                  style={styles.dropdown}
-                  containerStyle={styles.dropdownContainer}
-                  data={GOOGLE_TRANSLATE_LANGUAGES}
-                  search
-                  maxHeight={300}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Selecciona tu idioma"
-                  searchPlaceholder="Buscar idioma..."
-                  value={idioma}
-                  onFocus={handleLanguageFocus}
-                  onBlur={handleLanguageBlur}
-                  onChange={(item: Language) => {
-                    setIdioma(item.value)
-                  }}
-                  renderItem={renderLanguageItem}
-                  placeholderStyle={styles.dropdownPlaceholder}
-                  selectedTextStyle={styles.dropdownSelectedText}
-                  inputSearchStyle={styles.dropdownSearchInput}
-                  iconStyle={styles.dropdownIcon}
-                  renderRightIcon={() => <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.8)" />}
-                />
+                <Ionicons name="language-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
+                <View ref={(ref) => registerInput("language", ref as any)} style={styles.dropdown}>
+                  <Dropdown
+                    style={styles.dropdownStyle}
+                    containerStyle={styles.dropdownContainer}
+                    data={GOOGLE_TRANSLATE_LANGUAGES}
+                    search
+                    maxHeight={300}
+                    labelField="label"
+                    valueField="value"
+                    placeholder="Selecciona tu idioma"
+                    searchPlaceholder="Buscar idioma..."
+                    value={idioma}
+                    onFocus={handleLanguageFocus}
+                    onBlur={handleLanguageBlur}
+                    onChange={(item: Language) => {
+                      setIdioma(item.value)
+                    }}
+                    renderItem={renderLanguageItem}
+                    placeholderStyle={styles.dropdownPlaceholder}
+                    selectedTextStyle={styles.dropdownSelectedText}
+                    inputSearchStyle={styles.dropdownSearchInput}
+                    iconStyle={styles.dropdownIcon}
+                    renderRightIcon={() => <Ionicons name="chevron-down" size={20} color="rgba(0, 100, 200, 0.8)" />}
+                  />
+                </View>
               </Animated.View>
 
               {/* Contraseña */}
@@ -378,7 +412,7 @@ function RegisterScreenContent() {
                   {
                     borderColor: passwordFocusAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["rgba(255,255,255,0.3)", "#fff"],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
                     }),
                     borderWidth: passwordFocusAnim.interpolate({
                       inputRange: [0, 1],
@@ -387,22 +421,24 @@ function RegisterScreenContent() {
                   },
                 ]}
               >
-                <Ionicons name="lock-closed-outline" size={20} color="rgba(255,255,255,0.8)" />
+                <Ionicons name="lock-closed-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
                 <TextInput
+                  ref={(ref) => registerInput("password", ref)}
                   style={styles.input}
                   placeholder="Contraseña"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
                   value={contrasena}
                   onChangeText={setContrasena}
                   onFocus={handlePasswordFocus}
                   onBlur={handlePasswordBlur}
                   secureTextEntry={!showPassword}
+                  blurOnSubmit={false}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
                   <Ionicons
                     name={showPassword ? "eye-outline" : "eye-off-outline"}
                     size={20}
-                    color="rgba(255,255,255,0.8)"
+                    color="rgba(0, 100, 200, 0.8)"
                   />
                 </TouchableOpacity>
               </Animated.View>
@@ -416,7 +452,7 @@ function RegisterScreenContent() {
                 >
                   {isLoading ? (
                     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Ionicons name="refresh-outline" size={20} color="#11998e" />
+                      <Ionicons name="refresh-outline" size={20} color="#fff" />
                     </Animated.View>
                   ) : (
                     <Text style={styles.buttonText}>Crear Cuenta</Text>
@@ -432,8 +468,8 @@ function RegisterScreenContent() {
             </View>
           </Animated.View>
         </ScrollView>
-      </LinearGradient>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
@@ -447,49 +483,76 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  gradient: { flex: 1 },
+  backgroundImage: {
+    position: "absolute", // Fondo fijo
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  keyboardContainer: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingVertical: 50,
+    alignItems: "center",
+    paddingVertical: 100,
+    paddingHorizontal: 20,
   },
-  content: { paddingHorizontal: 30 },
+  cardContainer: {
+    width: width * 0.9,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
   form: { width: "100%" },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(240, 248, 255, 0.8)",
     borderRadius: 15,
     paddingHorizontal: 20,
     paddingVertical: 15,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   input: {
     flex: 1,
     marginLeft: 15,
     fontSize: 16,
-    color: "#fff",
+    color: "#0066CC",
   },
   dropdown: {
     flex: 1,
     marginLeft: 15,
+  },
+  dropdownStyle: {
+    flex: 1,
   },
   dropdownContainer: {
     backgroundColor: "#fff",
@@ -505,11 +568,11 @@ const styles = StyleSheet.create({
   },
   dropdownPlaceholder: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(0, 100, 200, 0.6)",
   },
   dropdownSelectedText: {
     fontSize: 16,
-    color: "#fff",
+    color: "#0066CC",
   },
   dropdownSearchInput: {
     fontSize: 16,
@@ -540,7 +603,7 @@ const styles = StyleSheet.create({
   },
   eyeIcon: { padding: 5 },
   button: {
-    backgroundColor: "#fff",
+    backgroundColor: "#0066CC",
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: "center",
@@ -553,32 +616,34 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonLoading: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(0, 102, 204, 0.8)",
   },
   buttonText: {
-    color: "#11998e",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
   linkContainer: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   linkText: {
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     fontSize: 16,
   },
   linkTextBold: {
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
   },
   backButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    zIndex: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
     padding: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
 })

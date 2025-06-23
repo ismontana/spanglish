@@ -1,54 +1,184 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+"use client"
+
+import { Ionicons } from "@expo/vector-icons"
+import { useRouter } from "expo-router"
+import { useRef } from "react"
+import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+
+const { width, height } = Dimensions.get("window")
 
 export default function MenuScreen() {
-  const router = useRouter();
+  const router = useRouter()
+
+  const MenuOption = ({
+    icon,
+    title,
+    onPress,
+    color = "#0a1e55",
+  }: {
+    icon: string
+    title: string
+    onPress: () => void
+    color?: string
+  }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current
+
+    const handlePress = () => {
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start()
+      onPress()
+    }
+
+    return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity style={[styles.option, { backgroundColor: color }]} onPress={handlePress}>
+          <View style={styles.optionContent}>
+            <View style={styles.iconContainer}>
+              <Ionicons name={icon as any} size={24} color="#fff" />
+            </View>
+            <Text style={styles.optionText}>{title}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    )
+  }
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/')}>
-        <Ionicons name="arrow-back" size={32} color="black" />
+    <ImageBackground
+      source={require("@/assets/images/back_claro.png")}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
+        <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/ajustes')}>
-        <Ionicons name="settings-outline" size={24} color="black" />
-        <Text style={styles.optionText}>Ajustes</Text>
-      </TouchableOpacity>
+      {/* Contenedor centrado */}
+      <View style={styles.centeredContainer}>
+        {/* Tarjeta principal */}
+        <View style={styles.cardContainer}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Menú Principal</Text>
+            <Text style={styles.subtitle}>Selecciona una opción</Text>
+          </View>
 
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/historial')}>
-        <Ionicons name="bookmark-outline" size={24} color="black" />
-        <Text style={styles.optionText}>Historial</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/user')}>
-        <Ionicons name="person-outline" size={24} color="black" />
-        <Text style={styles.optionText}>Mi perfil</Text>
-      </TouchableOpacity>
-    </View>
-  );
+          <View style={styles.optionsContainer}>
+            <MenuOption
+              icon="settings-outline"
+              title="Ajustes"
+              onPress={() => router.push("/ajustes")}
+              color="#0066CC"
+            />
+
+            <MenuOption
+              icon="bookmark-outline"
+              title="Historial"
+              onPress={() => router.push("/historial")}
+              color="#0066CC"
+            />
+
+            <MenuOption icon="person-outline" title="Mi perfil" onPress={() => router.push("/user")} color="#0066CC" />
+          </View>
+        </View>
+      </View>
+    </ImageBackground>
+  )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
     flex: 1,
-    paddingTop: 40,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
-    backgroundColor: 'white',
+  },
+  cardContainer: {
+    width: width * 0.9,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   backButton: {
-    marginBottom: 20,
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 25,
+    padding: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#0066CC",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(0, 100, 200, 0.8)",
+    textAlign: "center",
+  },
+  optionsContainer: {
+    gap: 15,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#dee3f9',
-    borderRadius: 8,
-    marginVertical: 5
+    borderRadius: 15,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
   },
   optionText: {
-    fontSize: 16,
-    marginLeft: 12,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
   },
-});
+})

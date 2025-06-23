@@ -3,11 +3,10 @@
 import { LoginPage } from "@/components/login"
 import { getInfoUsuario } from "@/lib/utils"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { useEffect, useRef, useState } from "react"
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 const { width, height } = Dimensions.get("window")
 
@@ -91,14 +90,14 @@ export default function UserPage() {
     icon,
     title,
     onPress,
-    color = "#667eea",
-    textColor = "#333",
+    color = "#0066CC",
+    isLogout = false,
   }: {
     icon: string
     title: string
     onPress: () => void
     color?: string
-    textColor?: string
+    isLogout?: boolean
   }) => {
     const buttonScaleAnim = useRef(new Animated.Value(1)).current
 
@@ -120,13 +119,16 @@ export default function UserPage() {
 
     return (
       <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
-        <TouchableOpacity style={[styles.menuButton, { backgroundColor: color }]} onPress={handlePress}>
+        <TouchableOpacity
+          style={[styles.menuButton, { backgroundColor: color }, isLogout && styles.logoutButton]}
+          onPress={handlePress}
+        >
           <View style={styles.menuButtonContent}>
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, isLogout && styles.logoutIconContainer]}>
               <Ionicons name={icon as any} size={24} color="#fff" />
             </View>
-            <Text style={[styles.menuButtonText, { color: textColor }]}>{title}</Text>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.menuButtonText}>{title}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -134,76 +136,72 @@ export default function UserPage() {
   }
 
   return (
-    <LinearGradient
-      colors={["#667eea", "#764ba2"]}
-      style={styles.container}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <ImageBackground
+      source={require("@/assets/images/back_claro.png")}
+      style={styles.backgroundImage}
+      resizeMode="cover"
     >
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-          },
-        ]}
-      >
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <Animated.View
-            style={[
-              styles.avatarContainer,
-              {
-                transform: [{ scale: avatarScaleAnim }],
-              },
-            ]}
-          >
-            <LinearGradient colors={["rgba(255,255,255,0.3)", "rgba(255,255,255,0.1)"]} style={styles.avatarGradient}>
-              <Ionicons name="person" size={60} color="#fff" />
-            </LinearGradient>
-          </Animated.View>
+      {/* ScrollView para manejar contenido largo */}
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Tarjeta principal */}
+        <Animated.View
+          style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Profile Header */}
+          <View style={styles.profileHeader}>
+            <Animated.View
+              style={[
+                styles.avatarContainer,
+                {
+                  transform: [{ scale: avatarScaleAnim }],
+                },
+              ]}
+            >
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={60} color="#fff" />
+              </View>
+            </Animated.View>
 
-          <Text style={styles.userName}>{usuario ? usuario.nombre : "Cargando usuario..."}</Text>
-          <Text style={styles.userEmail}>
-            {usuario ? usuario.correo || "Email no disponible" : "Cargando email..."}
-          </Text>
-        </View>
+            <Text style={styles.userName}>{usuario ? usuario.nombre : "Cargando usuario..."}</Text>
+            <Text style={styles.userEmail}>
+              {usuario ? usuario.correo || "Email no disponible" : "Cargando email..."}
+            </Text>
+          </View>
 
-        {/* Menu Options */}
-        <View style={styles.menuContainer}>
-          <MenuButton
-            icon="person-outline"
-            title="Editar perfil"
-            onPress={() => {}}
-            color="rgba(255,255,255,0.2)"
-            textColor="#fff"
-          />
+          {/* Menu Options */}
+          <View style={styles.menuContainer}>
+            <MenuButton
+              icon="person-outline"
+              title="Editar perfil"
+              onPress={() => router.push("/edit-profile")}
+              color="#0066CC"
+            />
 
-          <MenuButton
-            icon="watch-outline"
-            title="Configurar reloj"
-            onPress={() => {}}
-            color="rgba(255,255,255,0.2)"
-            textColor="#fff"
-          />
+            <MenuButton icon="watch-outline" title="Configurar reloj" onPress={() => {}} color="#0066CC" />
 
-          {/* Logout Button */}
-          <MenuButton
-            icon="log-out-outline"
-            title="Cerrar sesión"
-            onPress={handleLogout}
-            color="rgba(220, 53, 69, 0.9)"
-            textColor="#fff"
-          />
-        </View>
-      </Animated.View>
-    </LinearGradient>
+            {/* Logout Button */}
+            <MenuButton
+              icon="log-out-outline"
+              title="Cerrar sesión"
+              onPress={handleLogout}
+              color="#dc3545"
+              isLogout={true}
+            />
+          </View>
+        </Animated.View>
+      </ScrollView>
+    </ImageBackground>
   )
 }
 
@@ -211,51 +209,75 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  backgroundImage: {
     flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 30,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 80, // Padding para evitar que se corte
+    paddingHorizontal: 20,
+    minHeight: height, // Asegurar altura mínima
+  },
+  cardContainer: {
+    width: width * 0.9,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    minHeight: height * 0.7, // Altura mínima para asegurar que todo el contenido sea visible
   },
   backButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    zIndex: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
     padding: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   profileHeader: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   avatarContainer: {
     marginBottom: 20,
   },
-  avatarGradient: {
+  avatarCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
+    backgroundColor: "#0066CC",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   userName: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
     marginBottom: 8,
     textAlign: "center",
   },
   userEmail: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
   menuContainer: {
-    flex: 1,
-    gap: 12,
+    width: "100%",
+    gap: 15,
   },
   menuButton: {
     borderRadius: 15,
@@ -265,27 +287,34 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  logoutButton: {
+    marginTop: 10,
   },
   menuButtonContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 18,
+    padding: 20,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 15,
   },
+  logoutIconContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+  },
   menuButtonText: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
   },
 })

@@ -1,30 +1,31 @@
 "use client"
 
 import { AuthGuard } from "@/components/auth-guard"
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll"
 import config from "@/lib/config"
 import { Ionicons } from "@expo/vector-icons"
 import axios from "axios"
-import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { useEffect, useRef, useState } from "react"
 import {
   Alert,
   Animated,
-  Dimensions,
-  KeyboardAvoidingView,
+  Dimensions, ImageBackground, KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native"
 
 const { width, height } = Dimensions.get("window")
 
 function LoginScreenContent() {
   const router = useRouter()
+  const { scrollViewRef, registerInput, scrollToInput } = useKeyboardAwareScroll()
 
   const [correo, setCorreo] = useState("")
   const [contrasena, setContrasena] = useState("")
@@ -41,7 +42,6 @@ function LoginScreenContent() {
   const loadingRotateAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    // Solo iniciar animaciones si no está verificando autenticación y no está autenticado
     // Animación de entrada
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -126,6 +126,7 @@ function LoginScreenContent() {
       duration: 200,
       useNativeDriver: false,
     }).start()
+    scrollToInput("email")
   }
 
   const handleEmailBlur = () => {
@@ -142,6 +143,7 @@ function LoginScreenContent() {
       duration: 200,
       useNativeDriver: false,
     }).start()
+    scrollToInput("password")
   }
 
   const handlePasswordBlur = () => {
@@ -158,128 +160,149 @@ function LoginScreenContent() {
   })
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <View style={styles.container}>
+      {/* Fondo fijo */}
+      <ImageBackground
+        source={require("@/assets/images/back_claro.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+
+      {/* Back Button fijo */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Contenido scrollable */}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Back Button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-            },
-          ]}
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="none" // Evitar que se cierre el teclado
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Bienvenido</Text>
-            <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
-          </View>
+          {/* Tarjeta principal */}
+          <Animated.View
+            style={[
+              styles.cardContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              },
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Bienvenido</Text>
+              <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
+            </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Email Input */}
-            <Animated.View
-              style={[
-                styles.inputContainer,
-                {
-                  borderColor: emailFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["rgba(255,255,255,0.3)", "#fff"],
-                  }),
-                  borderWidth: emailFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 2],
-                  }),
-                },
-              ]}
-            >
-              <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.8)" />
-              <TextInput
-                style={styles.input}
-                placeholder="Correo electrónico"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={correo}
-                onChangeText={setCorreo}
-                onFocus={handleEmailFocus}
-                onBlur={handleEmailBlur}
-              />
-            </Animated.View>
-
-            {/* Password Input */}
-            <Animated.View
-              style={[
-                styles.inputContainer,
-                {
-                  borderColor: passwordFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["rgba(255,255,255,0.3)", "#fff"],
-                  }),
-                  borderWidth: passwordFocusAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 2],
-                  }),
-                },
-              ]}
-            >
-              <Ionicons name="lock-closed-outline" size={20} color="rgba(255,255,255,0.8)" />
-              <TextInput
-                style={styles.input}
-                placeholder="Contraseña"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                secureTextEntry={!showPassword}
-                value={contrasena}
-                onChangeText={setContrasena}
-                onFocus={handlePasswordFocus}
-                onBlur={handlePasswordBlur}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
-                  size={20}
-                  color="rgba(255,255,255,0.8)"
-                />
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Login Button */}
-            <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
-              <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonLoading]}
-                onPress={handleLogin}
-                disabled={isLoading}
-                activeOpacity={0.8}
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Email Input */}
+              <Animated.View
+                style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: emailFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
+                    }),
+                    borderWidth: emailFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 2],
+                    }),
+                  },
+                ]}
               >
-                {isLoading ? (
-                  <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                    <Ionicons name="refresh-outline" size={20} color="#667eea" />
-                  </Animated.View>
-                ) : (
-                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
+                <Ionicons name="mail-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
+                <TextInput
+                  ref={(ref) => registerInput("email", ref)}
+                  style={styles.input}
+                  placeholder="Correo electrónico"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={correo}
+                  onChangeText={setCorreo}
+                  onFocus={handleEmailFocus}
+                  onBlur={handleEmailBlur}
+                  blurOnSubmit={false} // Evitar cerrar teclado al enviar
+                />
+              </Animated.View>
 
-            {/* Register Link */}
-            <TouchableOpacity onPress={() => router.push("/register")} style={styles.linkContainer}>
-              <Text style={styles.linkText}>
-                ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </LinearGradient>
-    </KeyboardAvoidingView>
+              {/* Password Input */}
+              <Animated.View
+                style={[
+                  styles.inputContainer,
+                  {
+                    borderColor: passwordFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
+                    }),
+                    borderWidth: passwordFocusAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 2],
+                    }),
+                  },
+                ]}
+              >
+                <Ionicons name="lock-closed-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
+                <TextInput
+                  ref={(ref) => registerInput("password", ref)}
+                  style={styles.input}
+                  placeholder="Contraseña"
+                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
+                  secureTextEntry={!showPassword}
+                  value={contrasena}
+                  onChangeText={setContrasena}
+                  onFocus={handlePasswordFocus}
+                  onBlur={handlePasswordBlur}
+                  blurOnSubmit={false} // Evitar cerrar teclado al enviar
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="rgba(0, 100, 200, 0.8)"
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Login Button */}
+              <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                <TouchableOpacity
+                  style={[styles.button, isLoading && styles.buttonLoading]}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                >
+                  {isLoading ? (
+                    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                      <Ionicons name="refresh-outline" size={20} color="#0066CC" />
+                    </Animated.View>
+                  ) : (
+                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Register Link */}
+              <TouchableOpacity onPress={() => router.push("/register")} style={styles.linkContainer}>
+                <Text style={styles.linkText}>
+                  ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
@@ -295,37 +318,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gradient: {
+  backgroundImage: {
+    position: "absolute", // Fondo fijo
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  keyboardContainer: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-  loadingContainer: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 50,
+    paddingHorizontal: 20,
   },
-  loadingText: {
-    color: "#fff",
-    fontSize: 16,
-    marginTop: 20,
+  cardContainer: {
+    width: width * 0.9,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   header: {
     alignItems: "center",
-    marginBottom: 50,
+    marginBottom: 30,
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
   form: {
@@ -334,25 +370,25 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(240, 248, 255, 0.8)",
     borderRadius: 15,
     paddingHorizontal: 20,
     paddingVertical: 15,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   input: {
     flex: 1,
     marginLeft: 15,
     fontSize: 16,
-    color: "#fff",
+    color: "#0066CC",
   },
   eyeIcon: {
     padding: 5,
   },
   button: {
-    backgroundColor: "#fff",
+    backgroundColor: "#0066CC",
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: "center",
@@ -367,32 +403,34 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonLoading: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(0, 102, 204, 0.8)",
   },
   buttonText: {
-    color: "#667eea",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
   linkContainer: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   linkText: {
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(0, 100, 200, 0.8)",
     fontSize: 16,
   },
   linkTextBold: {
     fontWeight: "bold",
-    color: "#fff",
+    color: "#0066CC",
   },
   backButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    zIndex: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
     padding: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
 })

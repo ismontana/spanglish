@@ -3,6 +3,7 @@ export default {
     "name": "Spanglish",
     "slug": "Spanglish",
     "version": "1.0.0",
+    "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spanglish",
     "userInterfaceStyle": "automatic",
