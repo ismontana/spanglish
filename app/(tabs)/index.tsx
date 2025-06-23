@@ -8,7 +8,7 @@ import Voice from '@react-native-voice/voice';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 const { height, width } = Dimensions.get('window');
 
@@ -24,6 +24,13 @@ export default function WelcomeScreen() {
   const [selectedLangTo, setSelectedLangTo] = useState('en');
   const [selectedLangFrom, setSelectedLangFrom] = useState('es');
   const [usuario_id, setUsuario_id] = useState<number | null>(null);
+
+  
+    // Refs para pasar datos dinámicos a los listeners sin causar re-renders.
+    const langFromRef = useRef(selectedLangFrom);
+    const langToRef = useRef(selectedLangTo);
+    const usuarioIdRef = useRef(usuario_id);
+
   const finalRecognizedText = useRef<string>('');
 
 
@@ -59,15 +66,6 @@ export default function WelcomeScreen() {
     { label: 'Hindi', value: 'hi' },
   ];
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
-
   const saveConversation = async (original: string, translated: string, from: string, to: string) => {
     if (!usuario_id || !original || original.trim() === '' || !translated || translated.trim() === '') {
       console.warn('Faltan datos o están vacíos para guardar la conversación. Saltando:', { usuario_id, original, translated });
@@ -90,34 +88,36 @@ export default function WelcomeScreen() {
     }
   };
 
-  useEffect(() => {
-    Voice.onSpeechStart = () => {
-      console.log('onSpeechStart');
-      setIsListening(true);
-      setError('');
-      setText('');
-      setTranslatedText('');
-      setIsTranslating(false);
-      finalRecognizedText.current = '';
-    };
+  useEffect(() => { langFromRef.current = selectedLangFrom; }, [selectedLangFrom]);
+  useEffect(() => { langToRef.current = selectedLangTo; }, [selectedLangTo]);
+  useEffect(() => { usuarioIdRef.current = usuario_id; }, [usuario_id]);
 
-    Voice.onSpeechEnd = async () => {
-      console.log('onSpeechEnd');
-      setIsListening(false);
-      if (finalRecognizedText.current.trim() !== '') {
-        console.log('Texto final reconocido para traducción:', finalRecognizedText.current);
-        await getTranslationFromBackend(finalRecognizedText.current, selectedLangFrom, selectedLangTo);
-      } else {
-        console.log('No se reconoció texto final, no se enviará a traducir ni guardar.');
+  useEffect(() => {
+        console.log('Registrando listeners de Voice UNA SOLA VEZ.');
+        
+        Voice.onSpeechStart = () => {
+            console.log('onSpeechStart');
+            setIsListening(true);
+            setError('');
+            setText('');
+            setTranslatedText('');
+    };
+    
+    Voice.onSpeechResults = async (e) => {
+      const finalText = e.value?.[0] ?? '';
+      console.log('Resultado FINAL:', finalText);
+      if (finalText.trim() !== '') {
+        setText(finalText);
+        await getTranslationFromBackend(finalText, langFromRef.current, langToRef.current);
       }
     };
-
-    Voice.onSpeechResults = (e) => {
-      console.log('onSpeechResults: ', e);
-      const currentRecognizedText = e.value?.[0] ?? '';
-      setText(currentRecognizedText);
-      finalRecognizedText.current = currentRecognizedText;
-    };
+    
+        Voice.onSpeechEnd = async () => {
+            console.log("xd");
+            
+            setIsListening(false);
+                        
+        };
 
     Voice.onSpeechError = (e) => {
       if (e.error?.code === 'SpeechRecognitionNotAllowed') {
@@ -141,37 +141,41 @@ export default function WelcomeScreen() {
         );
         return;
       }
-      console.error('onSpeechError chido: ', e.error?.code);
+      console.error('codigo de error: ', e.error?.code, "mensaje:", e.error?.message        
+      );
       setError(e.error?.message || 'Error en el reconocimiento de voz');
       setIsListening(false);
     };
 
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+            console.log('Destruyendo listeners de Voice.');
+            Voice.destroy().then(Voice.removeAllListeners);
     };
-  }, [selectedLangFrom, selectedLangTo, usuario_id]);
+  }, []);
 
   const toggleListening = async () => {
-    try {
       if (isListening) {
-        console.log('Deteniendo micrófono manualmente...');
-        await Voice.stop();
+        try {          
+          await Voice.stop();                
+        } catch (error) {
+          console.error('Error al detener micrófono manualmente:', error);
+        }        
       } else {
-        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-        await Voice.start(selectedLangFrom);
-      }
-    } catch (e) {
+        try{
+        const options = {
+                "android.speech.extra.PARTIAL_RESULTS": true,
+            };
+        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);   
+        await Voice.start(selectedLangFrom, Platform.OS === 'android' ? options : undefined);  
+      }catch (e) {
       console.error('Error al alternar micrófono: ', e);
       setError((e as Error).message || 'Error al alternar micrófono');
-      setIsListening(false);
     }
+      }
   };
 
   const getTranslationFromBackend = async (originalText: string, from: string, to: string) => {
+    console.log("texto recibido: ", originalText, "mandandose a: ",config.BACKEND_URL_BASE)
     if (!originalText || originalText.trim() === '') return;
 
     setIsTranslating(true);
@@ -190,19 +194,6 @@ export default function WelcomeScreen() {
         setTranslatedText(translated);
 
         await saveConversation(originalText, translated, from, to);
-
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-        timeoutRef.current = setTimeout(async () => {
-          if (isListening) {
-            try {
-              await Voice.stop();
-              console.log('Micrófono detenido automáticamente después de traducción');
-            } catch (e) {
-              console.error('Error al detener micrófono automáticamente:', e);
-            }
-          }
-        }, 2000);
       } else {
         console.warn('La respuesta de traducción no contiene translatedText.');
         setError('No se pudo obtener la traducción.');
