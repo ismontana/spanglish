@@ -1,6 +1,8 @@
 "use client"
 
+import { useTheme } from "@/app/theme/themeContext"
 import { LoginPage } from "@/components/login"
+import { darkTheme } from "@/constants/theme"
 import { getInfoUsuario } from "@/lib/utils"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
@@ -14,7 +16,7 @@ export default function UserPage() {
   const router = useRouter()
   type Usuario = { nombre: string; [key: string]: any }
   const [usuario, setUsuario] = useState<Usuario | null>(null)
-
+  const {theme} = useTheme()
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
@@ -116,11 +118,11 @@ export default function UserPage() {
       ]).start()
       onPress()
     }
-
+    
     return (
       <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
         <TouchableOpacity
-          style={[styles.menuButton, { backgroundColor: color }, isLogout && styles.logoutButton]}
+          style={[styles.menuButton, { backgroundColor: theme.menu_blue }, isLogout && styles.logoutButton]}
           onPress={handlePress}
         >
           <View style={styles.menuButtonContent}>
@@ -134,10 +136,13 @@ export default function UserPage() {
       </Animated.View>
     )
   }
-
+  
+  const backgroundImage = theme === darkTheme  
+     ? require('@/assets/images/back_oscuro.png')  // imagen para modo oscuro
+     : require('@/assets/images/back_claro.png');
   return (
     <ImageBackground
-      source={require("@/assets/images/back_claro.png")}
+      source={backgroundImage}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -155,6 +160,7 @@ export default function UserPage() {
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              backgroundColor:theme.background
             },
           ]}
         >
@@ -168,13 +174,13 @@ export default function UserPage() {
                 },
               ]}
             >
-              <View style={styles.avatarCircle}>
+              <View style={[styles.avatarCircle, {backgroundColor:theme.menu_blue}]}>
                 <Ionicons name="person" size={60} color="#fff" />
               </View>
             </Animated.View>
 
-            <Text style={styles.userName}>{usuario ? usuario.nombre : "Cargando usuario..."}</Text>
-            <Text style={styles.userEmail}>
+            <Text style={[styles.userName, {color:theme.white_blue}]}>{usuario ? usuario.nombre : "Cargando usuario..."}</Text>
+            <Text style={[styles.userEmail, {color:theme.white_blue}]}>
               {usuario ? usuario.correo || "Email no disponible" : "Cargando email..."}
             </Text>
           </View>

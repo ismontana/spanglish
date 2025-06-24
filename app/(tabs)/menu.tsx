@@ -1,15 +1,22 @@
 "use client"
+import { useTheme } from '@/app/theme/themeContext';
+import { darkTheme } from '@/constants/theme';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useRef, useState } from "react";
+import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { Ionicons } from "@expo/vector-icons"
-import { useRouter } from "expo-router"
-import { useRef } from "react"
-import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 const { width, height } = Dimensions.get("window")
 
 export default function MenuScreen() {
+   const [isdark, setDarkMode] = useState(false)
+   const {theme, toggleTheme} = useTheme()
   const router = useRouter()
 
+
+ 
+    
   const MenuOption = ({
     icon,
     title,
@@ -38,25 +45,28 @@ export default function MenuScreen() {
       ]).start()
       onPress()
     }
+   ;
 
     return (
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <TouchableOpacity style={[styles.option, { backgroundColor: color }]} onPress={handlePress}>
+        <TouchableOpacity style={[styles.option, { backgroundColor: theme.menu_blue }]} onPress={handlePress}>
           <View style={styles.optionContent}>
             <View style={styles.iconContainer}>
               <Ionicons name={icon as any} size={24} color="#fff" />
             </View>
-            <Text style={styles.optionText}>{title}</Text>
+            <Text style={[styles.optionText, {color: theme.white}]}>{title}</Text>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </View>
         </TouchableOpacity>
       </Animated.View>
     )
   }
-
+  const backgroundImage = theme === darkTheme  
+        ? require('@/assets/images/back_oscuro.png')  // imagen para modo oscuro
+        : require('@/assets/images/back_claro.png')
   return (
     <ImageBackground
-      source={require("@/assets/images/back_claro.png")}
+      source={backgroundImage}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -67,10 +77,10 @@ export default function MenuScreen() {
       {/* Contenedor centrado */}
       <View style={styles.centeredContainer}>
         {/* Tarjeta principal */}
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
           <View style={styles.header}>
-            <Text style={styles.title}>Menú Principal</Text>
-            <Text style={styles.subtitle}>Selecciona una opción</Text>
+            <Text style={[styles.title,{color:theme.white_blue}]}>Menú Principal</Text>
+            <Text style={[styles.subtitle, {color:theme.white_blue}]}>Selecciona una opción</Text>
           </View>
 
           <View style={styles.optionsContainer}>
@@ -182,3 +192,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 })
+function setUsuario_id(id: any) {
+  throw new Error('Function not implemented.');
+}
+

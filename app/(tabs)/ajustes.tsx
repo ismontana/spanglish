@@ -186,7 +186,7 @@ export default function Ajustes() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           'usuario_id': 3,
-          'modo_oscuro': value ? 0 : 1,
+          'modo_oscuro': value ? 1 : 0,
         }),
       });
     } catch (error) {
