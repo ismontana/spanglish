@@ -10,18 +10,18 @@ import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    ImageBackground,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import { Dropdown } from "react-native-element-dropdown"
 
@@ -375,7 +375,7 @@ function EditProfileScreenContent() {
           },
         ]}
       >
-        <TouchableOpacity style={styles.backButtonTouchable} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButtonTouchable} onPress={() => router.push("/menu")}>
           <Ionicons name="arrow-back" size={24} color="#0066CC" />
         </TouchableOpacity>
       </Animated.View>

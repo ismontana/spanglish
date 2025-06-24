@@ -259,7 +259,7 @@ function RegisterScreenContent() {
       />
 
       {/* Back Button fijo */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
