@@ -51,8 +51,12 @@ export default function Historial() {
 
   useEffect(() => {
     const fetchHistorial = async () => {
+      if (!userId || userId == null) {
+        console.log("usuario:", userId);
+        return;
+      };
+      
       try {
-        if (!userId) return;
         
         const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
           id_usuario: userId

@@ -147,7 +147,7 @@ export default function UserPage() {
       resizeMode="cover"
     >
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
