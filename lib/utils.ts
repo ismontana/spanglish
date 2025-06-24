@@ -13,7 +13,6 @@ export async function getInfoUsuario() {
         Authorization: `Bearer ${token}`,
       },
     });
-
     return response.data.usuario;
   } catch (error) {
     console.error("Error al obtener usuario:", error);
@@ -23,7 +22,7 @@ export async function getInfoUsuario() {
 
 export async function getAjustesUsuario(usuario_id:any) {
   try {
-    const response = await axios.get(`http://192.168.1.74:4000/usuarios/obtener/${usuario_id}`);
+    const response = await axios.get(`http://192.168.1.74:4000/usuarios/obtenerajustes/${usuario_id}`);
     return response.data;
     
   } catch (error) {

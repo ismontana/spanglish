@@ -32,7 +32,7 @@ export default function Ajustes() {
       try {
         const user = await getInfoUsuario();
         if (user?.id) {
-          
+        console.log(user.id)
         setUsuario_id(user.id);
       }
       } catch (error) {
@@ -49,6 +49,7 @@ export default function Ajustes() {
      if (user?.id) {
        const ajustes = await getAjustesUsuario(user.id);
        console.log("Ajustes obtenidos:", ajustes);
+       console.log(user.id)
 
        if (ajustes) setDarkMode(ajustes.modo_oscuro === 1);
      }
@@ -185,7 +186,7 @@ export default function Ajustes() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           'usuario_id': 3,
-          'modo_oscuro': value ? 1 : 0,
+          'modo_oscuro': value ? 0 : 1,
         }),
       });
     } catch (error) {
