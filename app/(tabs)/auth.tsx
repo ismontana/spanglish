@@ -1,5 +1,7 @@
 "use client"
 
+import { useTheme } from "@/app/theme/themeContext"
+import { darkTheme } from "@/constants/theme"
 import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll"
 import config from "@/lib/config"
 import { Ionicons } from "@expo/vector-icons"
@@ -10,17 +12,19 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Alert,
   Animated,
-  Dimensions, ImageBackground, KeyboardAvoidingView,
+  Dimensions,
+  ImageBackground,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native"
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 export default function AuthScreen() {
   const { nombre, correo, idioma, contrasena } = useLocalSearchParams<{
@@ -30,6 +34,7 @@ export default function AuthScreen() {
     contrasena: string
   }>()
   const router = useRouter()
+  const { theme } = useTheme()
   const { scrollViewRef, registerInput, scrollToInput } = useKeyboardAwareScroll()
 
   const [codigo, setCodigo] = useState("")
@@ -191,21 +196,19 @@ export default function AuthScreen() {
     outputRange: ["0deg", "360deg"],
   })
 
-  return (
-    <View style={styles.container}>
-      {/* Fondo fijo */}
-      <ImageBackground
-        source={require("@/assets/images/back_claro.png")}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      />
+  const backgroundImage =
+    theme === darkTheme
+      ? require("@/assets/images/back_oscuro.png")
+      : require("@/assets/images/back_claro.png")
 
-      {/* Back Button fijo */}
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover" />
+
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      {/* Contenido scrollable */}
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -216,54 +219,49 @@ export default function AuthScreen() {
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          keyboardDismissMode="none" // Evitar que se cierre el teclado
+          keyboardDismissMode="none"
         >
-          {/* Tarjeta principal */}
           <Animated.View
             style={[
               styles.cardContainer,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+                backgroundColor: theme.secondary,
               },
             ]}
           >
-            {/* Header */}
             <View style={styles.header}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="mail-outline" size={60} color="#0066CC" />
+              <View style={[styles.iconContainer, { backgroundColor: theme.background }]}>
+                <Ionicons name="mail-outline" size={60} color={theme.primary} />
               </View>
-              <Text style={styles.title}>Verifica tu correo</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: theme.primary }]}>Verifica tu correo</Text>
+              <Text style={[styles.subtitle, { color: theme.text2 }]}>
                 Hemos enviado un código de 7 dígitos a{"\n"}
-                <Text style={styles.email}>{correo}</Text>
+                <Text style={[styles.email, { color: theme.primary }]}>{correo}</Text>
               </Text>
             </View>
 
-            {/* Form */}
             <View style={styles.form}>
-              {/* Code Input */}
               <Animated.View
                 style={[
                   styles.inputContainer,
                   {
+                    backgroundColor: theme.background,
                     borderColor: inputFocusAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
+                      outputRange: [theme.primary, theme.white_blue],
                     }),
-                    borderWidth: inputFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
+                    borderWidth: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 2] }),
                   },
                 ]}
               >
-                <Ionicons name="keypad-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
+                <Ionicons name="keypad-outline" size={20} color={theme.primary} />
                 <TextInput
                   ref={(ref) => registerInput("code", ref)}
-                  style={[styles.input, { letterSpacing: 2 }]}
+                  style={[styles.input, { color: theme.text, letterSpacing: 2 }]}
                   placeholder="Código de 7 dígitos"
-                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
+                  placeholderTextColor={theme.text2}
                   value={codigo}
                   onChangeText={setCodigo}
                   onFocus={handleInputFocus}
@@ -275,32 +273,40 @@ export default function AuthScreen() {
                 />
               </Animated.View>
 
-              {/* Verify Button */}
               <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
                 <TouchableOpacity
-                  style={[styles.button, isVerifying && styles.buttonLoading]}
+                  style={[
+                    styles.button,
+                    { backgroundColor: theme.primary },
+                    isVerifying && styles.buttonLoading,
+                  ]}
                   onPress={handleVerificar}
                   disabled={isVerifying}
                   activeOpacity={0.8}
                 >
                   {isVerifying ? (
                     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Ionicons name="refresh-outline" size={20} color="#fff" />
+                      <Ionicons name="refresh-outline" size={20} color={theme.white} />
                     </Animated.View>
                   ) : (
-                    <Text style={styles.buttonText}>Verificar Código</Text>
+                    <Text style={[styles.buttonText, { color: theme.white }]}>Verificar Código</Text>
                   )}
                 </TouchableOpacity>
               </Animated.View>
 
-              {/* Resend Link */}
               <TouchableOpacity
                 onPress={handleReenviar}
                 disabled={resendCooldown > 0}
                 style={styles.resendContainer}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.resendText, resendCooldown > 0 && styles.resendTextDisabled]}>
+                <Text
+                  style={[
+                    styles.resendText,
+                    { color: theme.text2 },
+                    resendCooldown > 0 && styles.resendTextDisabled,
+                  ]}
+                >
                   {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : "¿No recibiste el código? Reenviar"}
                 </Text>
               </TouchableOpacity>
@@ -317,7 +323,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundImage: {
-    position: "absolute", // Fondo fijo
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -330,12 +336,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 100, // Cambiar de 50 a 100
+    paddingVertical: 100,
     paddingHorizontal: 20,
   },
   cardContainer: {
     width: width * 0.9,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 30,
     padding: 30,
     shadowColor: "#000",
@@ -352,40 +357,33 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     zIndex: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 25,
     padding: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   header: {
     alignItems: "center",
     marginBottom: 30,
   },
   iconContainer: {
-    backgroundColor: "rgba(0, 100, 200, 0.1)",
     borderRadius: 50,
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#0066CC",
     marginBottom: 12,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
     lineHeight: 24,
   },
   email: {
     fontWeight: "bold",
-    color: "#0066CC",
   },
   form: {
     width: "100%",
@@ -393,23 +391,19 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(240, 248, 255, 0.8)",
     borderRadius: 15,
     paddingHorizontal: 20,
     paddingVertical: 15,
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: "rgba(0, 100, 200, 0.3)",
   },
   input: {
     flex: 1,
     marginLeft: 15,
     fontSize: 18,
-    color: "#0066CC",
     fontWeight: "bold",
   },
   button: {
-    backgroundColor: "#0066CC",
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: "center",
@@ -424,10 +418,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonLoading: {
-    backgroundColor: "rgba(0, 102, 204, 0.8)",
+    opacity: 0.8,
   },
   buttonText: {
-    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -436,13 +429,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   resendText: {
-    color: "rgba(0, 100, 200, 0.8)",
     fontSize: 16,
     textAlign: "center",
     textDecorationLine: "underline",
   },
   resendTextDisabled: {
-    color: "rgba(0, 100, 200, 0.5)",
+    opacity: 0.5,
     textDecorationLine: "none",
   },
 })

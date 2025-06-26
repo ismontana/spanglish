@@ -1,14 +1,17 @@
 "use client"
 
+import { useTheme } from "@/app/theme/themeContext"
+import { darkTheme } from "@/constants/theme"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { useEffect, useRef } from "react"
 import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 export const LoginPage = () => {
   const router = useRouter()
+  const { theme } = useTheme()
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -16,6 +19,7 @@ export const LoginPage = () => {
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const buttonScaleAnim1 = useRef(new Animated.Value(1)).current
   const buttonScaleAnim2 = useRef(new Animated.Value(1)).current
+  const avatarScaleAnim = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
     // Animación de entrada
@@ -38,44 +42,28 @@ export const LoginPage = () => {
     ]).start()
   }, [])
 
-  const handleLoginPress = () => {
+  const handlePressAnimation = (anim: Animated.Value, callback: () => void) => {
     Animated.sequence([
-      Animated.timing(buttonScaleAnim1, {
+      Animated.timing(anim, {
         toValue: 0.95,
         duration: 100,
         useNativeDriver: true,
       }),
-      Animated.timing(buttonScaleAnim1, {
+      Animated.timing(anim, {
         toValue: 1,
         duration: 100,
         useNativeDriver: true,
       }),
-    ]).start()
-    router.push("/login")
+    ]).start(callback)
   }
 
-  const handleRegisterPress = () => {
-    Animated.sequence([
-      Animated.timing(buttonScaleAnim2, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScaleAnim2, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start()
-    router.push("/register")
-  }
+  const backgroundImage =
+    theme === darkTheme
+      ? require("@/assets/images/back_oscuro.png")
+      : require("@/assets/images/back_claro.png")
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/back_claro.png")}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover">
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -90,50 +78,66 @@ export const LoginPage = () => {
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              backgroundColor: theme.secondary,
             },
           ]}
         >
           {/* Logo/Icon */}
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="person-circle-outline" size={80} color="#0066CC" />
-            </View>
-          </View>
+          
 
           {/* Header */}
+          <View style={styles.profileHeader}>
+                      <Animated.View
+                        style={[
+                          styles.avatarContainer,
+                          {
+                            transform: [{ scale: avatarScaleAnim }],
+                          },
+                        ]}
+                      >
+                        <View style={[styles.avatarCircle, {backgroundColor:theme.menu_blue}]}>
+                          <Ionicons name="person" size={60} color="#fff" />
+                        </View>
+                      </Animated.View>
+        
+                    </View>
           <View style={styles.header}>
-            <Text style={styles.title}>¡Bienvenido!</Text>
-            <Text style={styles.subtitle}>Accede a tu cuenta o crea una nueva para comenzar</Text>
+            <Text style={[styles.title, { color: theme.primary }]}>¡Bienvenido!</Text>
+            <Text style={[styles.subtitle, { color: theme.text2 }]}>
+              Accede a tu cuenta o crea una nueva para comenzar
+            </Text>
           </View>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <Animated.View style={{ transform: [{ scale: buttonScaleAnim1 }] }}>
               <TouchableOpacity
-                style={[styles.button, styles.loginButton]}
-                onPress={handleLoginPress}
+                style={[styles.button, { backgroundColor: theme.primary }]}
+                onPress={() => handlePressAnimation(buttonScaleAnim1, () => router.push("/login"))}
                 activeOpacity={0.8}
               >
-                <Ionicons name="log-in-outline" size={24} color="#0066CC" />
-                <Text style={[styles.buttonText, styles.loginButtonText]}>Iniciar Sesión</Text>
+                <Ionicons name="log-in-outline" size={24} color={theme.white} />
+                <Text style={[styles.buttonText, { color: theme.white }]}>Iniciar Sesión</Text>
               </TouchableOpacity>
             </Animated.View>
 
             <Animated.View style={{ transform: [{ scale: buttonScaleAnim2 }] }}>
               <TouchableOpacity
-                style={[styles.button, styles.registerButton]}
-                onPress={handleRegisterPress}
+                style={[styles.button, { backgroundColor: theme.primary }]}
+                onPress={() => handlePressAnimation(buttonScaleAnim2, () => router.push("/register"))}
                 activeOpacity={0.8}
               >
-                <Ionicons name="person-add-outline" size={24} color="#fff" />
-                <Text style={[styles.buttonText, styles.registerButtonText]}>Crear Cuenta</Text>
+                <Ionicons name="person-add-outline" size={24} color={theme.white} />
+                <Text style={[styles.buttonText, { color: theme.white }]}>Crear Cuenta</Text>
               </TouchableOpacity>
             </Animated.View>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Al continuar, aceptas nuestros términos y condiciones</Text>
+            <Text style={[styles.footerText, { color: theme.text2 }]}>
+              Al continuar, aceptas nuestros términos y condiciones
+            </Text>
           </View>
         </Animated.View>
       </View>
@@ -142,16 +146,12 @@ export const LoginPage = () => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   backgroundImage: {
     flex: 1,
   },
   cardContainer: {
     alignSelf: "center",
     width: width * 0.9,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 30,
     padding: 30,
     shadowColor: "#000",
@@ -168,11 +168,26 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logoCircle: {
-    backgroundColor: "rgba(0, 100, 200, 0.1)",
     borderRadius: 60,
     padding: 20,
     borderWidth: 3,
-    borderColor: "rgba(0, 100, 200, 0.3)",
+  },
+  profileHeader: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  avatarContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 0,
+  },
+  avatarCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
   },
   header: {
     alignItems: "center",
@@ -181,13 +196,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: "bold",
-    color: "#0066CC",
     marginBottom: 12,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
     lineHeight: 24,
     paddingHorizontal: 20,
@@ -212,23 +225,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  loginButton: {
-    backgroundColor: "#0066CC",
-  },
-  registerButton: {
-    backgroundColor: "rgba(0, 100, 200, 0.8)",
-    borderWidth: 0, // Asegurar que no hay borde
-  },
   buttonText: {
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 12,
-  },
-  loginButtonText: {
-    color: "#fff",
-  },
-  registerButtonText: {
-    color: "#fff",
   },
   footer: {
     marginTop: 30,
@@ -236,7 +236,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: "rgba(0, 100, 200, 0.7)",
     textAlign: "center",
     lineHeight: 18,
   },
@@ -245,11 +244,9 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     zIndex: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 25,
     padding: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   centeredContainer: {
     flex: 1,
