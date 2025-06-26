@@ -83,8 +83,8 @@ export default function WelcomeScreen() {
         console.log('Registrando listeners de Voice UNA SOLA VEZ.');
         
         Voice.onSpeechStart = () => {
-            console.log('onSpeechStart');
             setIsListening(true);
+            console.log('onSpeechStart');
             setError('');
             setText('');
             setTranslatedText('');
@@ -156,7 +156,8 @@ export default function WelcomeScreen() {
         const options = {
                 "android.speech.extra.PARTIAL_RESULTS": true,
             };
-        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);   
+        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);  
+        setIsListening(true); 
         await Voice.start(selectedLangFrom, Platform.OS === 'android' ? options : undefined);  
       }catch (e) {
       console.error('Error al alternar micrófono: ', e);
@@ -281,7 +282,7 @@ export default function WelcomeScreen() {
     toggleTheme();              // Cambias el tema visualmente
 
     try {
-      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
+      await fetch(config.BACKEND_URL_BASE + '/ajustes/modificarajuste', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

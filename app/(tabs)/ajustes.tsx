@@ -181,7 +181,7 @@ export default function Ajustes() {
     toggleTheme();                  // cambia el tema visualmente
 
     try {
-      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
+      await fetch(config.BACKEND_URL_BASE + '/ajustes/modificarajuste', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
