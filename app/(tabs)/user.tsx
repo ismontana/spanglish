@@ -1,20 +1,31 @@
 "use client"
 
-import { LoginPage } from "@/components/login"
+import { useTheme } from "@/app/theme/themeContext"
+import { LoginPage } from "@/components/Log"
+import { darkTheme } from "@/constants/theme"
 import { getInfoUsuario } from "@/lib/utils"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import { useEffect, useRef, useState } from "react"
-import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import {
+  Animated,
+  Dimensions,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 
 const { width, height } = Dimensions.get("window")
 
 export default function UserPage() {
   const router = useRouter()
-  type Usuario = { nombre: string; [key: string]: any }
+  type Usuario = { nombre: string; correo?: string; [key: string]: any }
   const [usuario, setUsuario] = useState<Usuario | null>(null)
-
+  const { theme } = useTheme()
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
@@ -90,13 +101,11 @@ export default function UserPage() {
     icon,
     title,
     onPress,
-    color = "#0066CC",
     isLogout = false,
   }: {
     icon: string
     title: string
     onPress: () => void
-    color?: string
     isLogout?: boolean
   }) => {
     const buttonScaleAnim = useRef(new Animated.Value(1)).current
@@ -113,14 +122,13 @@ export default function UserPage() {
           duration: 100,
           useNativeDriver: true,
         }),
-      ]).start()
-      onPress()
+      ]).start(onPress)
     }
 
     return (
       <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
         <TouchableOpacity
-          style={[styles.menuButton, { backgroundColor: color }, isLogout && styles.logoutButton]}
+          style={[styles.menuButton, { backgroundColor: theme.menu_blue }, isLogout && styles.logoutButton]}
           onPress={handlePress}
         >
           <View style={styles.menuButtonContent}>
@@ -135,14 +143,14 @@ export default function UserPage() {
     )
   }
 
+  const backgroundImage =
+    theme === darkTheme
+      ? require("@/assets/images/back_oscuro.png") // imagen para modo oscuro
+      : require("@/assets/images/back_claro.png")
   return (
-    <ImageBackground
-      source={require("@/assets/images/back_claro.png")}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover">
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/menu")}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
@@ -155,6 +163,7 @@ export default function UserPage() {
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              backgroundColor: theme.background,
             },
           ]}
         >
@@ -168,36 +177,27 @@ export default function UserPage() {
                 },
               ]}
             >
-              <View style={styles.avatarCircle}>
+              <View style={[styles.avatarCircle, { backgroundColor: theme.menu_blue }]}>
                 <Ionicons name="person" size={60} color="#fff" />
               </View>
             </Animated.View>
 
-            <Text style={styles.userName}>{usuario ? usuario.nombre : "Cargando usuario..."}</Text>
-            <Text style={styles.userEmail}>
+            <Text style={[styles.userName, { color: theme.white_blue }]}>
+              {usuario ? usuario.nombre : "Cargando usuario..."}
+            </Text>
+            <Text style={[styles.userEmail, { color: theme.white_blue }]}>
               {usuario ? usuario.correo || "Email no disponible" : "Cargando email..."}
             </Text>
           </View>
 
           {/* Menu Options */}
           <View style={styles.menuContainer}>
-            <MenuButton
-              icon="person-outline"
-              title="Editar perfil"
-              onPress={() => router.push("/edit-profile")}
-              color="#0066CC"
-            />
+            <MenuButton icon="person-outline" title="Editar perfil" onPress={() => router.push("/edit-profile")} />
 
-            <MenuButton icon="watch-outline" title="Configurar reloj" onPress={() => {}} color="#0066CC" />
+            <MenuButton icon="watch-outline" title="Configurar reloj" onPress={() => router.push("/config-watch")} />
 
             {/* Logout Button */}
-            <MenuButton
-              icon="log-out-outline"
-              title="Cerrar sesión"
-              onPress={handleLogout}
-              color="#dc3545"
-              isLogout={true}
-            />
+            <MenuButton icon="log-out-outline" title="Cerrar sesión" onPress={handleLogout} isLogout={true} />
           </View>
         </Animated.View>
       </ScrollView>
@@ -222,7 +222,6 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: width * 0.9,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 30,
     padding: 30,
     shadowColor: "#000",
@@ -257,7 +256,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#0066CC",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
@@ -266,13 +264,11 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#0066CC",
     marginBottom: 8,
     textAlign: "center",
   },
   userEmail: {
     fontSize: 16,
-    color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
   menuContainer: {

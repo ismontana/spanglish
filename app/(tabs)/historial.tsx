@@ -1,3 +1,4 @@
+import { useTheme } from '@/app/theme/themeContext';
 import config from '@/lib/config';
 import { getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,8 @@ interface HistorialItem {
 
 export default function Historial() {
   const router = useRouter();
+   const [isdark, setDarkMode] = useState(false)
+   const {theme, toggleTheme} = useTheme()
   const [searchText, setSearchText] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [historial, setHistorial] = useState<HistorialItem[]>([]);
@@ -48,8 +51,12 @@ export default function Historial() {
 
   useEffect(() => {
     const fetchHistorial = async () => {
+      if (!userId || userId == null) {
+        console.log("usuario:", userId);
+        return;
+      };
+      
       try {
-        if (!userId) return;
         
         const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
           id_usuario: userId
@@ -121,8 +128,8 @@ export default function Historial() {
       </View>
       
       <View style={styles.translationContent}>
-        <Text style={styles.originalText}>{item.originalText}</Text>
-        <Text style={styles.translatedText}>{item.translatedText}</Text>
+        <Text style={[styles.originalText,{color:theme.text}]}>{item.originalText}</Text>
+        <Text style={[styles.translatedText,{color:theme.text}]}>{item.translatedText}</Text>
       </View>
       
       <View style={styles.itemFooter}>
@@ -140,13 +147,13 @@ export default function Historial() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor:theme.background}]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, {backgroundColor:theme.background}]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="arrow-back" size={28} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Historial</Text>
+        <Text style={[styles.headerTitle, {color:theme.text}]}>Historial</Text>
         <Pressable 
           style={styles.filterButton}
           onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
@@ -160,14 +167,14 @@ export default function Historial() {
       </View>
 
       {/* Barra de búsqueda */}
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer,{backgroundColor:theme.background}]}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, {backgroundColor:theme.background}]}
           placeholder="Buscar traducciones..."
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.text2}
         />
         {searchText.length > 0 && (
           <Pressable onPress={() => setSearchText('')}>

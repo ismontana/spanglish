@@ -1,48 +1,44 @@
 "use client"
 
+import { useTheme } from "@/app/theme/themeContext"
 import { AuthGuard } from "@/components/auth-guard"
+import FloatingLabelDropdown from "@/components/FloatingLabelDropdown"
+import FloatingLabelInput from "@/components/FloatingLabelInput"
 import { GOOGLE_TRANSLATE_LANGUAGES, type Language } from "@/constants/languages"
-import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll"
+import { darkTheme } from "@/constants/theme"
 import config from "@/lib/config"
 import { Ionicons } from "@expo/vector-icons"
 import axios from "axios"
 import { useRouter } from "expo-router"
 import * as SecureStore from "expo-secure-store"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    ImageBackground,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
-import { Dropdown } from "react-native-element-dropdown"
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 function EditProfileScreenContent() {
   const router = useRouter()
-  const { scrollViewRef, registerInput, scrollToInput } = useKeyboardAwareScroll()
+  const { theme } = useTheme()
 
-  // Estados para los datos del usuario
   const [nombre, setNombre] = useState("")
   const [idiomaPreferido, setIdiomaPreferido] = useState("es")
   const [contrasenaActual, setContrasenaActual] = useState("")
   const [contrasenaNueva, setContrasenaNueva] = useState("")
   const [confirmarContrasena, setConfirmarContrasena] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(50)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
@@ -50,74 +46,41 @@ function EditProfileScreenContent() {
   const loadingRotateAnim = useRef(new Animated.Value(0)).current
   const backButtonOpacity = useRef(new Animated.Value(1)).current
 
-  const nameFocusAnim = useRef(new Animated.Value(0)).current
-  const languageFocusAnim = useRef(new Animated.Value(0)).current
-  const currentPasswordFocusAnim = useRef(new Animated.Value(0)).current
-  const newPasswordFocusAnim = useRef(new Animated.Value(0)).current
-  const confirmPasswordFocusAnim = useRef(new Animated.Value(0)).current
-
-  // Cargar datos del usuario al montar el componente
   useEffect(() => {
     cargarUsuario()
   }, [])
 
-  // Configurar animaciones
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
     ]).start()
 
     const rotateAnimation = Animated.loop(
-      Animated.timing(loadingRotateAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
+      Animated.timing(loadingRotateAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
     )
-
-    if (isLoading) {
-      rotateAnimation.start()
-    } else {
+    if (isLoading) rotateAnimation.start()
+    else {
       rotateAnimation.stop()
       loadingRotateAnim.setValue(0)
     }
-
     return () => rotateAnimation.stop()
   }, [isLoading])
 
-  // Función para cargar datos del usuario
   async function cargarUsuario() {
     setIsLoading(true)
     try {
       const token = await SecureStore.getItemAsync("userToken")
       if (!token) {
-        Alert.alert("Error", "No hay sesión activa")
         router.replace("/login")
         return
       }
-
       const response = await axios.post(
         `${config.BACKEND_URL_BASE}/usuarios/obtenerusuario`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       )
-
       const usuario = response.data.usuario
       setNombre(usuario.nombre || "")
       setIdiomaPreferido(usuario.idioma_preferido || "es")
@@ -129,37 +92,24 @@ function EditProfileScreenContent() {
     }
   }
 
-  // Función para guardar cambios
   async function guardarCambios() {
-    if (!nombre.trim()) {
-      Alert.alert("Error", "El nombre no puede estar vacío")
+    if (!nombre.trim() || /\d/.test(nombre)) {
+      Alert.alert("Error", "El nombre no puede estar vacío y no debe contener números")
       return
     }
-
-    if (/\d/.test(nombre)) {
-      Alert.alert("Error", "El nombre no debe contener números")
-      return
-    }
-
-    // Validar idioma
-    const isValidLanguage = GOOGLE_TRANSLATE_LANGUAGES.some((lang) => lang.value === idiomaPreferido)
-    if (!isValidLanguage) {
+    if (!GOOGLE_TRANSLATE_LANGUAGES.some((lang) => lang.value === idiomaPreferido)) {
       Alert.alert("Error", "Por favor selecciona un idioma válido de la lista")
       return
     }
-
-    // Validar contraseñas si se quiere cambiar
     if (contrasenaNueva || confirmarContrasena || contrasenaActual) {
       if (!contrasenaActual || !contrasenaNueva || !confirmarContrasena) {
         Alert.alert("Error", "Debes completar todos los campos de contraseña")
         return
       }
-
       if (contrasenaNueva.length < 8) {
         Alert.alert("Error", "La nueva contraseña debe tener al menos 8 caracteres")
         return
       }
-
       if (contrasenaNueva !== confirmarContrasena) {
         Alert.alert("Error", "Las nuevas contraseñas no coinciden")
         return
@@ -167,29 +117,17 @@ function EditProfileScreenContent() {
     }
 
     setIsLoading(true)
-
-    // Animación del botón
     Animated.sequence([
-      Animated.timing(buttonScaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
+      Animated.timing(buttonScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+      Animated.timing(buttonScaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
     ]).start()
 
     try {
       const token = await SecureStore.getItemAsync("userToken")
       if (!token) {
-        Alert.alert("Error", "No hay sesión activa")
         router.replace("/login")
         return
       }
-
       await axios.post(
         `${config.BACKEND_URL_BASE}/usuarios/actualizar`,
         {
@@ -199,17 +137,9 @@ function EditProfileScreenContent() {
           contrasena_nueva: contrasenaNueva || undefined,
           confirmar_contrasena: confirmarContrasena || undefined,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       )
-
-      Alert.alert("¡Éxito!", "Perfil actualizado correctamente", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ])
+      Alert.alert("¡Éxito!", "Perfil actualizado correctamente", [{ text: "OK", onPress: () => router.back() }])
     } catch (error: any) {
       console.error("Error al actualizar perfil:", error)
       Alert.alert("Error", error.response?.data?.error || "No se pudo actualizar el perfil")
@@ -220,412 +150,140 @@ function EditProfileScreenContent() {
 
   const handleScroll = (event: any) => {
     const scrollY = event.nativeEvent.contentOffset.y
-
-    if (scrollY > 50) {
-      // Ocultar botón cuando se hace scroll down
-      Animated.timing(backButtonOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start()
-    } else {
-      // Mostrar botón cuando se hace scroll up o está arriba
-      Animated.timing(backButtonOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start()
-    }
+    Animated.timing(backButtonOpacity, {
+      toValue: scrollY > 50 ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start()
   }
 
-  // Handlers de focus con scroll
-  const handleNameFocus = useCallback(() => {
-    Animated.timing(nameFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-    scrollToInput("name")
-  }, [scrollToInput])
+  const spin = loadingRotateAnim.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] })
 
-  const handleNameBlur = useCallback(() => {
-    Animated.timing(nameFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }, [])
+  const renderLanguageItem = (item: Language) => (
+    <View style={[styles.dropdownItem, { backgroundColor: theme.secondary }]}>
+      <Text style={[styles.dropdownItemText, { color: theme.text }]}>{item.label}</Text>
+      <Text style={[styles.dropdownItemCode, { color: theme.text2 }]}>({item.value})</Text>
+    </View>
+  )
 
-  const handleLanguageFocus = useCallback(() => {
-    Animated.timing(languageFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-    scrollToInput("language")
-  }, [scrollToInput])
+  const backgroundImage =
+    theme === darkTheme
+      ? require("@/assets/images/back_oscuro.png")
+      : require("@/assets/images/back_claro.png")
 
-  const handleLanguageBlur = useCallback(() => {
-    Animated.timing(languageFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }, [])
-
-  const handleCurrentPasswordFocus = useCallback(() => {
-    Animated.timing(currentPasswordFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-    scrollToInput("currentPassword")
-  }, [scrollToInput])
-
-  const handleCurrentPasswordBlur = useCallback(() => {
-    Animated.timing(currentPasswordFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }, [])
-
-  const handleNewPasswordFocus = useCallback(() => {
-    Animated.timing(newPasswordFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-    scrollToInput("newPassword")
-  }, [scrollToInput])
-
-  const handleNewPasswordBlur = useCallback(() => {
-    Animated.timing(newPasswordFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }, [])
-
-  const handleConfirmPasswordFocus = useCallback(() => {
-    Animated.timing(confirmPasswordFocusAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-    scrollToInput("confirmPassword")
-  }, [scrollToInput])
-
-  const handleConfirmPasswordBlur = useCallback(() => {
-    Animated.timing(confirmPasswordFocusAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start()
-  }, [])
-
-  const spin = loadingRotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  })
-
-  const renderLanguageItem = (item: Language) => {
-    return (
-      <View style={styles.dropdownItem}>
-        <Text style={styles.dropdownItemText}>{item.label}</Text>
-        <Text style={styles.dropdownItemCode}>({item.value})</Text>
-      </View>
-    )
-  }
-
-  // Pantalla de carga inicial
   if (isLoading && !nombre) {
     return (
-      <View style={styles.container}>
-        <ImageBackground
-          source={require("@/assets/images/back_claro.png")}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover" />
         <View style={styles.loadingContainer}>
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons name="refresh-outline" size={40} color="#fff" />
+            <Ionicons name="refresh-outline" size={40} color={theme.white} />
           </Animated.View>
-          <Text style={styles.loadingText}>Cargando perfil...</Text>
+          <Text style={[styles.loadingText, { color: theme.white }]}>Cargando perfil...</Text>
         </View>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
-      {/* Fondo fijo */}
-      <ImageBackground
-        source={require("@/assets/images/back_claro.png")}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover" />
 
-      {/* Back Button con animación y color azul - fijo */}
-      <Animated.View
-        style={[
-          styles.backButton,
-          {
-            opacity: backButtonOpacity,
-          },
-        ]}
-      >
-        <TouchableOpacity style={styles.backButtonTouchable} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#0066CC" />
+      <Animated.View style={[styles.backButton, { opacity: backButtonOpacity }]}>
+        <TouchableOpacity
+          style={[styles.backButtonTouchable, { backgroundColor: theme.secondary, borderColor: theme.primary }]}
+          onPress={() => router.push("/menu")}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.primary} />
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Contenido scrollable */}
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
+      <KeyboardAvoidingView style={styles.keyboardContainer} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
-          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
-          keyboardDismissMode="none" // Evitar que se cierre el teclado
         >
-          {/* Tarjeta principal */}
           <Animated.View
             style={[
               styles.cardContainer,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+                backgroundColor: theme.secondary,
               },
             ]}
           >
             <View style={styles.header}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatarCircle}>
-                  <Ionicons name="person" size={50} color="#fff" />
-                </View>
+              <View style={[styles.avatarCircle, { backgroundColor: theme.primary }]}>
+                <Ionicons name="person" size={50} color={theme.white} />
               </View>
-              <Text style={styles.title}>Editar Perfil</Text>
-              <Text style={styles.subtitle}>Actualiza tu información personal</Text>
+              <Text style={[styles.title, { color: theme.primary }]}>Editar Perfil</Text>
+              <Text style={[styles.subtitle, { color: theme.text2 }]}>Actualiza tu información personal</Text>
             </View>
 
             <View style={styles.form}>
-              {/* Nombre */}
-              <Text style={styles.sectionTitle}>Información Personal</Text>
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: nameFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
-                    }),
-                    borderWidth: nameFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
-                  },
-                ]}
-              >
-                <Ionicons name="person-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
-                <TextInput
-                  ref={(ref) => registerInput("name", ref)}
-                  style={styles.input}
-                  placeholder="Nombre completo"
-                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
-                  value={nombre}
-                  onChangeText={setNombre}
-                  onFocus={handleNameFocus}
-                  onBlur={handleNameBlur}
-                  autoCapitalize="words"
-                  blurOnSubmit={false}
-                />
-              </Animated.View>
+              <Text style={[styles.sectionTitle, { color: theme.primary }]}>Información Personal</Text>
+              <FloatingLabelInput label="Nombre completo" iconName="person-outline" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
 
-              {/* Idioma */}
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: languageFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
-                    }),
-                    borderWidth: languageFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
-                  },
-                ]}
-              >
-                <Ionicons name="language-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
-                <View ref={(ref) => registerInput("language", ref as any)} style={styles.dropdown}>
-                  <Dropdown
-                    style={styles.dropdownStyle}
-                    containerStyle={styles.dropdownContainer}
-                    data={GOOGLE_TRANSLATE_LANGUAGES}
-                    search
-                    maxHeight={300}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Selecciona tu idioma"
-                    searchPlaceholder="Buscar idioma..."
-                    value={idiomaPreferido}
-                    onFocus={handleLanguageFocus}
-                    onBlur={handleLanguageBlur}
-                    onChange={(item: Language) => {
-                      setIdiomaPreferido(item.value)
-                    }}
-                    renderItem={renderLanguageItem}
-                    placeholderStyle={styles.dropdownPlaceholder}
-                    selectedTextStyle={styles.dropdownSelectedText}
-                    inputSearchStyle={styles.dropdownSearchInput}
-                    iconStyle={styles.dropdownIcon}
-                    renderRightIcon={() => <Ionicons name="chevron-down" size={20} color="rgba(0, 100, 200, 0.8)" />}
-                  />
-                </View>
-              </Animated.View>
+              <FloatingLabelDropdown
+                label="Idioma preferido"
+                iconName="language-outline"
+                data={GOOGLE_TRANSLATE_LANGUAGES}
+                search
+                maxHeight={300}
+                labelField="label"
+                valueField="value"
+                value={idiomaPreferido}
+                onChange={(item: Language) => setIdiomaPreferido(item.value)}
+                renderItem={renderLanguageItem}
+                renderRightIcon={() => <Ionicons name="chevron-down" size={20} color={theme.primary} />}
+              />
 
-              {/* Cambiar Contraseña */}
-              <Text style={styles.sectionTitle}>Cambiar Contraseña (Opcional)</Text>
-              <Text style={styles.sectionSubtitle}>Deja en blanco si no quieres cambiar tu contraseña</Text>
+              <Text style={[styles.sectionTitle, { color: theme.primary }]}>Cambiar Contraseña (Opcional)</Text>
+              <Text style={[styles.sectionSubtitle, { color: theme.text2 }]}>
+                Deja en blanco si no quieres cambiar tu contraseña
+              </Text>
 
-              {/* Contraseña Actual */}
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: currentPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
-                    }),
-                    borderWidth: currentPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
-                  },
-                ]}
-              >
-                <Ionicons name="lock-closed-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
-                <TextInput
-                  ref={(ref) => registerInput("currentPassword", ref)}
-                  style={styles.input}
-                  placeholder="Contraseña actual"
-                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
-                  value={contrasenaActual}
-                  onChangeText={setContrasenaActual}
-                  onFocus={handleCurrentPasswordFocus}
-                  onBlur={handleCurrentPasswordBlur}
-                  secureTextEntry={!showCurrentPassword}
-                  blurOnSubmit={false}
-                />
-                <TouchableOpacity onPress={() => setShowCurrentPassword(!showCurrentPassword)} style={styles.eyeIcon}>
-                  <Ionicons
-                    name={showCurrentPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="rgba(0, 100, 200, 0.8)"
-                  />
-                </TouchableOpacity>
-              </Animated.View>
+              <FloatingLabelInput
+                label="Contraseña actual"
+                iconName="lock-closed-outline"
+                value={contrasenaActual}
+                onChangeText={setContrasenaActual}
+                isPassword
+              />
+              <FloatingLabelInput
+                label="Nueva contraseña"
+                iconName="key-outline"
+                value={contrasenaNueva}
+                onChangeText={setContrasenaNueva}
+                isPassword
+              />
+              <FloatingLabelInput
+                label="Confirmar nueva contraseña"
+                iconName="checkmark-circle-outline"
+                value={confirmarContrasena}
+                onChangeText={setConfirmarContrasena}
+                isPassword
+              />
 
-              {/* Nueva Contraseña */}
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: newPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
-                    }),
-                    borderWidth: newPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
-                  },
-                ]}
-              >
-                <Ionicons name="key-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
-                <TextInput
-                  ref={(ref) => registerInput("newPassword", ref)}
-                  style={styles.input}
-                  placeholder="Nueva contraseña"
-                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
-                  value={contrasenaNueva}
-                  onChangeText={setContrasenaNueva}
-                  onFocus={handleNewPasswordFocus}
-                  onBlur={handleNewPasswordBlur}
-                  secureTextEntry={!showNewPassword}
-                  blurOnSubmit={false}
-                />
-                <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)} style={styles.eyeIcon}>
-                  <Ionicons
-                    name={showNewPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="rgba(0, 100, 200, 0.8)"
-                  />
-                </TouchableOpacity>
-              </Animated.View>
-
-              {/* Confirmar Nueva Contraseña */}
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    borderColor: confirmPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["rgba(0, 100, 200, 0.3)", "rgba(0, 100, 200, 0.6)"],
-                    }),
-                    borderWidth: confirmPasswordFocusAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 2],
-                    }),
-                  },
-                ]}
-              >
-                <Ionicons name="checkmark-circle-outline" size={20} color="rgba(0, 100, 200, 0.8)" />
-                <TextInput
-                  ref={(ref) => registerInput("confirmPassword", ref)}
-                  style={styles.input}
-                  placeholder="Confirmar nueva contraseña"
-                  placeholderTextColor="rgba(0, 100, 200, 0.6)"
-                  value={confirmarContrasena}
-                  onChangeText={setConfirmarContrasena}
-                  onFocus={handleConfirmPasswordFocus}
-                  onBlur={handleConfirmPasswordBlur}
-                  secureTextEntry={!showConfirmPassword}
-                  blurOnSubmit={false}
-                />
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-                  <Ionicons
-                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="rgba(0, 100, 200, 0.8)"
-                  />
-                </TouchableOpacity>
-              </Animated.View>
-
-              {/* Botón Guardar */}
               <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
                 <TouchableOpacity
-                  style={[styles.button, isLoading && styles.buttonLoading]}
+                  style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonLoading]}
                   onPress={guardarCambios}
                   disabled={isLoading}
                   activeOpacity={0.8}
                 >
                   {isLoading ? (
                     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Ionicons name="refresh-outline" size={20} color="#fff" />
+                      <Ionicons name="refresh-outline" size={20} color={theme.white} />
                     </Animated.View>
                   ) : (
                     <>
-                      <Ionicons name="save-outline" size={20} color="#fff" />
-                      <Text style={styles.buttonText}>Guardar Cambios</Text>
+                      <Ionicons name="save-outline" size={20} color={theme.white} />
+                      <Text style={[styles.buttonText, { color: theme.white }]}>Guardar Cambios</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -648,139 +306,40 @@ export default function EditProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  backgroundImage: {
-    position: "absolute", // Fondo fijo
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
+  backgroundImage: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+  keyboardContainer: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 100,
+    paddingVertical: 50,
     paddingHorizontal: 20,
   },
   cardContainer: {
     width: width * 0.9,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 30,
     padding: 30,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    color: "#fff",
-    fontSize: 16,
-    marginTop: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  avatarContainer: {
-    marginBottom: 20,
-  },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { fontSize: 16, marginTop: 20 },
+  header: { alignItems: "center", marginBottom: 20 },
   avatarCircle: {
-    backgroundColor: "#0066CC",
     borderRadius: 50,
     padding: 20,
     borderWidth: 2,
     borderColor: "rgba(0, 100, 200, 0.3)",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#0066CC",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "rgba(0, 100, 200, 0.8)",
-    textAlign: "center",
-  },
-  form: { width: "100%" },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0066CC",
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "rgba(0, 100, 200, 0.7)",
-    marginBottom: 15,
-    fontStyle: "italic",
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(240, 248, 255, 0.8)",
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(0, 100, 200, 0.3)",
   },
-  input: {
-    flex: 1,
-    marginLeft: 15,
-    fontSize: 16,
-    color: "#0066CC",
-  },
-  dropdown: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  dropdownStyle: {
-    flex: 1,
-  },
-  dropdownContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  dropdownPlaceholder: {
-    fontSize: 16,
-    color: "rgba(0, 100, 200, 0.6)",
-  },
-  dropdownSelectedText: {
-    fontSize: 16,
-    color: "#0066CC",
-  },
-  dropdownSearchInput: {
-    fontSize: 16,
-    color: "#333",
-    borderColor: "#ddd",
-  },
-  dropdownIcon: {
-    width: 20,
-    height: 20,
-  },
+  title: { fontSize: 32, fontWeight: "bold", marginBottom: 8 },
+  subtitle: { fontSize: 16, textAlign: "center" },
+  form: { width: "100%" },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 8, marginTop: 10 },
+  sectionSubtitle: { fontSize: 14, marginBottom: 15, fontStyle: "italic" },
   dropdownItem: {
     padding: 15,
     flexDirection: "row",
@@ -789,19 +348,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: "#333",
-    flex: 1,
-  },
-  dropdownItemCode: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-  },
-  eyeIcon: { padding: 5 },
+  dropdownItemText: { fontSize: 16, flex: 1 },
+  dropdownItemCode: { fontSize: 14, fontWeight: "500" },
   button: {
-    backgroundColor: "#0066CC",
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: "center",
@@ -815,32 +364,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  buttonLoading: {
-    backgroundColor: "rgba(0, 102, 204, 0.8)",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 10,
-  },
+  buttonLoading: { opacity: 0.8 },
+  buttonText: { fontSize: 18, fontWeight: "bold", marginLeft: 8 },
+  backButton: { position: "absolute", top: 50, left: 20, zIndex: 10 },
   backButtonTouchable: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 25,
     padding: 12,
     borderWidth: 2,
-    borderColor: "rgba(0, 100, 200, 0.3)",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 4,
