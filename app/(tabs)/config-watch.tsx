@@ -6,53 +6,76 @@ import { Ionicons } from "@expo/vector-icons"
 import { Camera, CameraView } from "expo-camera"
 import { useRouter } from "expo-router"
 import { useEffect, useRef, useState } from "react"
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import {
+    Alert,
+    Animated,
+    Dimensions,
+    ImageBackground,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native"
 
 const { width } = Dimensions.get("window")
-const SCANNER_SIZE = width * 0.7
+const CARD_WIDTH = width * 0.9
+const SCANNER_SIZE = CARD_WIDTH * 0.7 // Hacer el escaner relativo al tamaño de la tarjeta
 
 export default function ConfigWatchScreen() {
   const router = useRouter()
   const { theme } = useTheme()
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
-  const animatedValue = useRef(new Animated.Value(0)).current
+  const [scanned, setScanned] = useState(false)
+
+  // Animaciones
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(50)).current
+  const scanAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    // Solicitar permisos de cámara al cargar la pantalla
     const getCameraPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync()
       setHasPermission(status === "granted")
     }
     getCameraPermissions()
-  }, [])
 
-  useEffect(() => {
+    // Animaciones de entrada de la tarjeta
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+    ]).start()
+
     // Animación de la línea de escaneo
     const scanAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(animatedValue, {
-          toValue: 1,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(animatedValue, {
-          toValue: 0,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
+        Animated.timing(scanAnim, { toValue: 1, duration: 2500, useNativeDriver: false }),
+        Animated.timing(scanAnim, { toValue: 0, duration: 2500, useNativeDriver: false }),
       ]),
     )
     scanAnimation.start()
     return () => scanAnimation.stop()
-  }, [animatedValue])
+  }, [])
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
-    // Aquí irá la lógica para manejar el QR escaneado
-    alert(`Código de barras tipo ${type} y dato ${data} ha sido escaneado!`)
-    // Por ahora, solo volvemos a la pantalla anterior
-    router.back()
+    if (scanned) return
+    setScanned(true)
+    Alert.alert(
+      "QR Escaneado",
+      `Se ha detectado un código QR. ¿Deseas vincular este dispositivo?`,
+      [
+        { text: "Cancelar", onPress: () => setScanned(false), style: "cancel" },
+        { text: "Vincular", onPress: () => {
+          // Aquí va tu lógica para procesar el QR (data)
+          console.log("Datos del QR:", data)
+          router.back()
+        }},
+      ]
+    )
   }
 
-  const translateY = animatedValue.interpolate({
+  const translateY = scanAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, SCANNER_SIZE],
   })
@@ -62,18 +85,19 @@ export default function ConfigWatchScreen() {
       ? require("@/assets/images/back_oscuro.png")
       : require("@/assets/images/back_claro.png")
 
+  // Vistas para el estado de permisos
   if (hasPermission === null) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Solicitando permiso de cámara...</Text>
       </View>
     )
   }
   if (hasPermission === false) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: "center", alignItems: "center" }]}>
-        <Text style={{ color: theme.text, textAlign: "center", marginBottom: 20 }}>
-          No tenemos acceso a la cámara. Por favor, habilítalo en los ajustes.
+      <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.permissionText, { color: theme.text }]}>
+          No se ha concedido permiso para usar la cámara.
         </Text>
         <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={() => router.back()}>
           <Text style={[styles.buttonText, { color: theme.white }]}>Volver</Text>
@@ -83,35 +107,51 @@ export default function ConfigWatchScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        onBarcodeScanned={handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ImageBackground source={backgroundImage} style={styles.backgroundImage} resizeMode="cover" />
 
-      {/* Overlay y Marco del Escáner */}
-      <View style={styles.overlay}>
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)" }} />
-        <View style={styles.middleContainer}>
-          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)" }} />
-          <View style={styles.scannerContainer}>
-            <View style={[styles.scannerFrame, { borderColor: theme.primary }]} />
-            <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
-          </View>
-          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)" }} />
-        </View>
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)" }}>
-          <Text style={styles.infoText}>Apunta la cámara al código QR del reloj</Text>
-        </View>
-      </View>
-
-      {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
+
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <Animated.View
+          style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+              backgroundColor: theme.secondary,
+            },
+          ]}
+        >
+          {/* Header de la tarjeta */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.primary }]}>Vincular Reloj</Text>
+            <Text style={[styles.subtitle, { color: theme.text2 }]}>Escanea el código QR de tu dispositivo</Text>
+          </View>
+
+          {/* Contenedor del Escáner */}
+          <View style={styles.scannerWrapper}>
+            <CameraView
+              onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.scannerMarker}>
+              <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
+            </View>
+          </View>
+
+          {/* Instrucciones */}
+          <View style={styles.instructionsContainer}>
+            <Ionicons name="help-circle-outline" size={24} color={theme.primary} />
+            <Text style={[styles.instructionsText, { color: theme.text }]}>
+              Asegúrate de que el código QR esté bien iluminado y centrado en el recuadro para una correcta lectura.
+            </Text>
+          </View>
+
+        </Animated.View>
+      </ScrollView>
     </View>
   )
 }
@@ -120,41 +160,75 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
+  backgroundImage: {
     ...StyleSheet.absoluteFillObject,
-    flex: 1,
   },
-  middleContainer: {
-    flexDirection: "row",
-    height: SCANNER_SIZE,
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 80,
+    paddingHorizontal: 20,
   },
-  scannerContainer: {
+  cardContainer: {
+    width: CARD_WIDTH,
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    alignItems: "center",
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  scannerWrapper: {
     width: SCANNER_SIZE,
     height: SCANNER_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: 20,
+    overflow: "hidden", // Muy importante para que la cámara no se salga del recuadro
+    position: "relative",
+    backgroundColor: "#000",
   },
-  scannerFrame: {
+  scannerMarker: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 20,
-    borderColor: "#0066CC",
   },
   scanLine: {
     width: "100%",
-    height: 2,
-    backgroundColor: "#0066CC",
-    shadowColor: "#0066CC",
+    height: 3,
+    backgroundColor: 'white',
+    shadowColor: "white",
     shadowOpacity: 1,
     shadowRadius: 10,
-    elevation: 10,
+    elevation: 5,
   },
-  infoText: {
-    color: "#fff",
-    fontSize: 16,
-    textAlign: "center",
+  instructionsContainer: {
     marginTop: 30,
-    fontWeight: "bold",
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  instructionsText: {
+    flex: 1,
+    fontSize: 14,
+    textAlign: 'left',
+    lineHeight: 20,
   },
   backButton: {
     position: "absolute",
@@ -164,6 +238,17 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 25,
     padding: 12,
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  permissionText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
   },
   button: {
     borderRadius: 15,
