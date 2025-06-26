@@ -41,6 +41,7 @@ export default function WelcomeScreen() {
         const user = await getInfoUsuario();
         if (user?.id) {
           setUsuario_id(user.id);
+          setSelectedLangFrom(user.idioma_preferido || 'es')
         }
         
       } catch (error) {
