@@ -41,6 +41,7 @@ export default function WelcomeScreen() {
         const user = await getInfoUsuario();
         if (user?.id) {
           setUsuario_id(user.id);
+          setSelectedLangFrom(user.idioma_preferido || 'es')
         }
         
       } catch (error) {
@@ -82,8 +83,8 @@ export default function WelcomeScreen() {
         console.log('Registrando listeners de Voice UNA SOLA VEZ.');
         
         Voice.onSpeechStart = () => {
-            console.log('onSpeechStart');
             setIsListening(true);
+            console.log('onSpeechStart');
             setError('');
             setText('');
             setTranslatedText('');
@@ -155,7 +156,8 @@ export default function WelcomeScreen() {
         const options = {
                 "android.speech.extra.PARTIAL_RESULTS": true,
             };
-        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);   
+        console.log(`Iniciando micrófono en idioma: ${selectedLangFrom}...`);  
+        setIsListening(true); 
         await Voice.start(selectedLangFrom, Platform.OS === 'android' ? options : undefined);  
       }catch (e) {
       console.error('Error al alternar micrófono: ', e);
