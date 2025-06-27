@@ -7,23 +7,25 @@ import { useRef } from "react";
 import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
-
+const isSmartwatch = width < 300;
+  const isTablet = width > 600;
 export default function MenuScreen() {
    
   const {theme, toggleTheme} = useTheme()
   const router = useRouter()
-  const isSmartwatch = width < 300;
-  const isTablet = width > 600;    
+      
   const MenuOption = ({
     icon,
     title,
     onPress,
-    color = "#0a1e55",
+    color,
+
   }: {
     icon: string
     title: string
     onPress: () => void
     color?: string
+
   }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current
 
@@ -77,13 +79,25 @@ export default function MenuScreen() {
       {/* Contenedor centrado */}
       <View style={styles.centeredContainer}>
       {/* Tarjeta principal */}
-      <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
-      <View style={styles.header}>
-            <Text style={[styles.title,{color:theme.white_blue}]}>Menú Principal</Text>
-            <Text style={[styles.subtitle, {color:theme.white_blue}]}>Selecciona una opción</Text>
+        <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
+          <View style={styles.optionsContainer}>
+
+          <MenuOption
+              icon="qr-code-outline"
+              title="GenerarQR"
+              onPress={() => router.push("/(tabs)/generarqr")}
+              />
+
+          <MenuOption
+              icon="settings-outline"
+              title="Ajustes"
+              onPress={() => router.push("/ajustes")}
+              color="#0066CC"
+              />
+
           </View>
         </View>
-        </View>
+      </View>
       
       </ImageBackground>
     ):(
@@ -185,12 +199,18 @@ const styles = StyleSheet.create({
     color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
+  menu_element:{
+    width:50,
+    height:50,
+    backgroundColor: "#111"
+  },
   optionsContainer: {
     gap: 15,
   },
   option: {
     borderRadius: 15,
-    marginBottom: 8,
+    height: isSmartwatch? 50 : 100,
+    marginBottom: isSmartwatch? 0:8,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -199,15 +219,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 4,
+    justifyContent: "center"
   },
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding:isSmartwatch? 1: 20,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
+    width:isSmartwatch? 30: 50,
+    height: isSmartwatch? 30: 50,
     borderRadius: 25,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
@@ -216,7 +237,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    fontSize: 18,
+    fontSize:isSmartwatch? 13: 18,
     fontWeight: "700",
     color: "#fff",
   },
