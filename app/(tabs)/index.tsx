@@ -24,7 +24,6 @@ export default function WelcomeScreen() {
   const [selectedLangTo, setSelectedLangTo] = useState('en');
   const [selectedLangFrom, setSelectedLangFrom] = useState('es');
   const [usuario_id, setUsuario_id] = useState<number | null>(null);
-
   
     // Refs para pasar datos dinámicos a los listeners sin causar re-renders.
     const langFromRef = useRef(selectedLangFrom);
@@ -32,7 +31,8 @@ export default function WelcomeScreen() {
     const usuarioIdRef = useRef(usuario_id);
 
     const finalTextRef = useRef<string>('');
-
+    const isSmartwatch = width < 300;
+    const isTablet = width > 600;
 
 
   useEffect(() => {
@@ -224,6 +224,22 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container,{backgroundColor: theme.background}]}>
+      {isSmartwatch ? (
+        <ImageBackground source={backgroundImage}
+        style={styles.backgroundImage}
+        resizeMode="cover">
+          <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
+            <Ionicons name="menu" size={32} color={theme.primary} />
+          </Pressable>
+          <Pressable style={[styles.micButton, {backgroundColor:theme.primary2}]} onPress={toggleListening}>
+              <Ionicons
+                name={isListening ? "mic-off" : "mic"}
+                size={48}
+                color={isListening ? "red" : theme.text}
+              />
+            </Pressable>
+        </ImageBackground>
+      ):(
       <ImageBackground
         source={backgroundImage}
         style={styles.backgroundImage}
@@ -255,7 +271,7 @@ export default function WelcomeScreen() {
 
             {translatedText && !isTranslating && (
               <>
-                <Text style={styles.translatedTextLabel}>Traducido ({selectedLangTo}):</Text>
+                <Text style={[styles.translatedTextLabel, isSmartwatch && styles.textDisplayContainer]}>Traducido ({selectedLangTo}):</Text>
                 <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
               </>
             )}
@@ -280,7 +296,7 @@ export default function WelcomeScreen() {
     toggleTheme();              // Cambias el tema visualmente
 
     try {
-      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
+      await fetch(`${config.BACKEND_URL_BASE}/ajustes/modificarajuste`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -320,6 +336,7 @@ export default function WelcomeScreen() {
           </View>
         </View>
       </ImageBackground>
+      )}
     </View>
   );
 }

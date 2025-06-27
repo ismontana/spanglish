@@ -3,20 +3,17 @@ import { useTheme } from '@/app/theme/themeContext';
 import { darkTheme } from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
 
 const { width, height } = Dimensions.get("window")
 
 export default function MenuScreen() {
-   const [isdark, setDarkMode] = useState(false)
-   const {theme, toggleTheme} = useTheme()
+   
+  const {theme, toggleTheme} = useTheme()
   const router = useRouter()
-
-
- 
-    
+  const isSmartwatch = width < 300;
+  const isTablet = width > 600;    
   const MenuOption = ({
     icon,
     title,
@@ -64,47 +61,79 @@ export default function MenuScreen() {
   const backgroundImage = theme === darkTheme  
         ? require('@/assets/images/back_oscuro.png')  // imagen para modo oscuro
         : require('@/assets/images/back_claro.png')
+        
   return (
+    <View style={[styles.container,{backgroundColor: theme.background}]}>
+    { isSmartwatch ?(
     <ImageBackground
       source={backgroundImage}
       style={styles.backgroundImage}
       resizeMode="cover"
-    >
+      >
       <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
-        <Ionicons name="arrow-back" size={24} color="#fff" />
+      <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
-
+      
       {/* Contenedor centrado */}
       <View style={styles.centeredContainer}>
-        {/* Tarjeta principal */}
-        <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
-          <View style={styles.header}>
+      {/* Tarjeta principal */}
+      <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
+      <View style={styles.header}>
+            <Text style={[styles.title,{color:theme.white_blue}]}>Menú Principal</Text>
+            <Text style={[styles.subtitle, {color:theme.white_blue}]}>Selecciona una opción</Text>
+          </View>
+        </View>
+        </View>
+      
+      </ImageBackground>
+    ):(
+
+      
+      <ImageBackground
+      source={backgroundImage}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
+      <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+      
+      {/* Contenedor centrado */}
+      <View style={styles.centeredContainer}>
+      {/* Tarjeta principal */}
+      <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
+      <View style={styles.header}>
             <Text style={[styles.title,{color:theme.white_blue}]}>Menú Principal</Text>
             <Text style={[styles.subtitle, {color:theme.white_blue}]}>Selecciona una opción</Text>
           </View>
 
-          <View style={styles.optionsContainer}>
+<View style={styles.optionsContainer}>
             <MenuOption
               icon="settings-outline"
               title="Ajustes"
               onPress={() => router.push("/ajustes")}
               color="#0066CC"
-            />
+              />
 
             <MenuOption
               icon="bookmark-outline"
               title="Historial"
               onPress={() => router.push("/historial")}
               color="#0066CC"
-            />
+              />
 
             <MenuOption icon="person-outline" title="Mi perfil" onPress={() => router.push("/user")} color="#0066CC" />
           </View>
         </View>
-      </View>
-    </ImageBackground>
+        </View>
+      
+      </ImageBackground>
+    )
+  }
+   </View>
   )
 }
+
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -190,6 +219,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#fff",
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: 'rgba(28, 28, 28, 0.8)',
   },
 })
 function setUsuario_id(id: any) {
