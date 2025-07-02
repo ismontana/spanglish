@@ -4,7 +4,7 @@ import { darkTheme } from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useRef } from "react";
-import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
 const isSmartwatch = width < 300;
@@ -54,7 +54,12 @@ export default function MenuScreen() {
               <Ionicons name={icon as any} size={24} color="#fff" />
             </View>
             <Text style={[styles.optionText, {color: theme.white}]}>{title}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
+            { isSmartwatch? (
+              <></>
+            ):(
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            )
+            }
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -72,19 +77,16 @@ export default function MenuScreen() {
       style={styles.backgroundImage}
       resizeMode="cover"
       >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
-      <Ionicons name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
       
       {/* Contenedor centrado */}
-      <View style={styles.centeredContainer}>
+      <ScrollView style={styles.centeredContainerScroll}  contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       {/* Tarjeta principal */}
         <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
           <View style={styles.optionsContainer}>
 
           <MenuOption
               icon="qr-code-outline"
-              title="GenerarQR"
+              title="Iniciar Sesión"
               onPress={() => router.push("/(tabs)/generarqr")}
               />
 
@@ -94,10 +96,16 @@ export default function MenuScreen() {
               onPress={() => router.push("/ajustes")}
               color="#0066CC"
               />
+          <MenuOption
+              icon="home-outline"
+              title="Volver"
+              onPress={() => router.push("/")}
+              color="#0066CC"
+              />
 
           </View>
         </View>
-      </View>
+      </ScrollView>
       
       </ImageBackground>
     ):(
@@ -152,6 +160,7 @@ export default function MenuScreen() {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    width: width * 1
   },
   centeredContainer: {
     flex: 1,
@@ -159,11 +168,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+  centeredContainerScroll: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
   cardContainer: {
-    width: width * 0.9,
+    width: isSmartwatch? width*0.72: width * 0.9,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 30,
-    padding: 30,
+    borderRadius: isSmartwatch? 20 : 30,
+    padding: isSmartwatch? 5: 30,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -174,13 +187,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
+    position:"absolute",
+    top: isSmartwatch? 2: 50,
+    left: isSmartwatch? 80: 20,
     zIndex: 2,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
-    padding: 12,
+    padding: isSmartwatch? 4: 12,
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.5)",
   },
@@ -205,11 +218,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#111"
   },
   optionsContainer: {
-    gap: 15,
+    gap: isSmartwatch? 10:15,
   },
   option: {
     borderRadius: 15,
-    height: isSmartwatch? 50 : 100,
+    height: isSmartwatch? 45 : 100,
     marginBottom: isSmartwatch? 0:8,
     shadowColor: "#000",
     shadowOffset: {
@@ -218,7 +231,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 4,
+    elevation:4,
     justifyContent: "center"
   },
   optionContent: {

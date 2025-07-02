@@ -231,7 +231,7 @@ export default function WelcomeScreen() {
         style={styles.backgroundImage}
         resizeMode="cover">
           <Pressable style={styles.menuButton} onPress={() => router.push('/menu')}>
-            <Ionicons name="menu" size={32} color={theme.primary} />
+            <Ionicons name="menu" size={32} color={isSmartwatch? theme.menuIcon: theme.primary} />
           </Pressable>
           <Pressable style={[styles.micButton, {backgroundColor:theme.primary2}]} onPress={toggleListening}>
               <Ionicons
