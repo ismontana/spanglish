@@ -35,6 +35,7 @@ export default {
     "plugins": [
       "expo-web-browser",
       "expo-secure-store",
+      "expo-build-properties",
       "expo-router",
       [
         "expo-splash-screen",

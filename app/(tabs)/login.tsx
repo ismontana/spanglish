@@ -107,9 +107,12 @@ function LoginScreenContent() {
         correo,
         contrasena,
       })
-      const { token, usuario } = res.data
-      await SecureStore.setItemAsync("userToken", token)
+      const { token, refreshToken, usuario } = res.data
 
+      // Guardamos ambos tokens de forma segura
+      await SecureStore.setItemAsync("userToken", token)
+      await SecureStore.setItemAsync("refreshToken", refreshToken)
+      
       Alert.alert("¡Bienvenido!", `Hola ${usuario.nombre}`)
       router.replace("/user")
     } catch (err) {
@@ -198,8 +201,7 @@ function LoginScreenContent() {
                     <Text style={[styles.buttonText, { color: theme.white }]}>Iniciar Sesión</Text>
                   )}
                 </TouchableOpacity>
-              </Animated.View>
-
+              </Animated.View>            
               <TouchableOpacity onPress={() => router.push("/register")} style={styles.linkContainer}>
                 <Text style={[styles.linkText, { color: theme.text2 }]}>
                   ¿No tienes cuenta? <Text style={[styles.linkTextBold, { color: theme.primary }]}>Regístrate</Text>
