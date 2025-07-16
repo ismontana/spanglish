@@ -53,7 +53,21 @@ export default function WelcomeScreen() {
   }, []);
 
   const router = useRouter();
-  
+
+  const langs = [
+    { label: 'Español', value: 'es' },
+    { label: 'Inglés', value: 'en' },
+    { label: 'Francés', value: 'fr' },
+    { label: 'Alemán', value: 'de' },
+    { label: 'Italiano', value: 'it' },
+    { label: 'Portugués', value: 'pt' },
+    { label: 'Japonés', value: 'ja' },
+    { label: 'Árabe', value: 'ar' },
+    { label: 'Ruso', value: 'ru' },
+    { label: 'Coreano', value: 'ko' },
+    { label: 'Hindi', value: 'hi' },
+  ];
+
   const saveConversation = async (original: string, translated: string, from: string, to: string) => {
     if (!usuarioIdRef || !original || original.trim() === '' || !translated || translated.trim() === '') {
       console.warn('Faltan datos o están vacíos para guardar la conversación. Saltando:', { usuario_id, original, translated });
@@ -70,7 +84,8 @@ export default function WelcomeScreen() {
       console.log('Conversación guardada:', response.data);
       return response.data;
     } catch (error) {
-      console.log('Error al guardar conversación:', error);
+      console.error('Error al guardar conversación:', error);
+      Alert.alert('Error', 'No se pudo guardar la conversación. Inténtalo de nuevo más tarde.');
       return null;
     }
   };
@@ -89,26 +104,22 @@ export default function WelcomeScreen() {
             setText('');
             setTranslatedText('');
     };
-
-    Voice.onSpeechResults = (e) => {
+    
+    Voice.onSpeechResults = async (e) => {
       const finalText = e.value?.[0] ?? '';
-      console.log('Resultado parcial:', finalText);
+      console.log('Resultado FINAL:', finalText);
       if (finalText.trim() !== '') {
         setText(finalText);
-        finalTextRef.current = finalText;
+        await getTranslationFromBackend(finalText, langFromRef.current, langToRef.current);
       }
     };
     
-    Voice.onSpeechEnd = async () => {
-      const textoFinal = finalTextRef.current.trim();
-      if (textoFinal !== '') {
-        console.log('Texto final reconocido:', textoFinal);
-        await getTranslationFromBackend(textoFinal, langFromRef.current, langToRef.current);
-      } else {
-        console.log('No se reconoció texto final válido.');
-      }
-      setIsListening(false);
-    };
+        Voice.onSpeechEnd = async () => {
+            console.log("xd");
+            
+            setIsListening(false);
+                        
+        };
 
     Voice.onSpeechError = (e) => {
       if (e.error?.code === 'SpeechRecognitionNotAllowed') {
@@ -184,6 +195,7 @@ export default function WelcomeScreen() {
       if (response.data?.translatedText) {
         const translated = response.data.translatedText;
         setTranslatedText(translated);
+
         await saveConversation(originalText, translated, from, to);
       } else {
         console.warn('La respuesta de traducción no contiene translatedText.');

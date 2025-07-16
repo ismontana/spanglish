@@ -17,6 +17,10 @@ import {
     TouchableOpacity,
     View
 } from "react-native"
+import * as SecureStore from 'expo-secure-store'; // Necesitamos SecureStore para obtener el token
+import config from "@/lib/config"
+
+const WEBSOCKET_URL =`${config.WS_URL}`;
 
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = width * 0.9
@@ -66,14 +70,61 @@ export default function ConfigWatchScreen() {
       `Se ha detectado un código QR. ¿Deseas vincular este dispositivo?`,
       [
         { text: "Cancelar", onPress: () => setScanned(false), style: "cancel" },
-        { text: "Vincular", onPress: () => {
-          // Aquí va tu lógica para procesar el QR (data)
-          console.log("Datos del QR:", data)
-          router.back()
-        }},
+        { text: "Vincular", onPress: () => authorizeDevice(data) },
       ]
-    )
-  }
+    );
+  };  
+
+  const authorizeDevice = async (sessionId: string) => {
+        try {
+            // Obtenemos el refreshToken guardado de forma segura
+            const refreshToken = await SecureStore.getItemAsync('refreshToken');
+
+            if (!refreshToken) {
+                Alert.alert('Error', 'No se encontró tu sesión. Por favor, inicia sesión de nuevo en este dispositivo.');
+                router.back();
+                return;
+            }
+            
+            // Conectamos al WebSocket para enviar la autorización
+            const transferWs = new WebSocket(WEBSOCKET_URL);
+
+            transferWs.onopen = () => {
+                const payload = {
+                    type: 'jwt-auth',
+                    sessionId: sessionId,
+                    refreshToken: refreshToken, // ¡Enviamos el refreshToken!
+                };
+                transferWs.send(JSON.stringify(payload));
+            };
+
+            transferWs.onmessage = (e) => {
+                const message = JSON.parse(e.data);
+                if (message.type === 'auth-success') {
+                    Alert.alert('Éxito', 'El otro dispositivo ha iniciado sesión correctamente.');
+                    // Actualizamos el refreshToken en este dispositivo para mantener la sesión activa
+                    if (message.newRefreshToken) {
+                        SecureStore.setItemAsync('refreshToken', message.newRefreshToken);
+                    }
+                } else if (message.type === 'auth-error'){
+                  console.log(message);
+                    Alert.alert('Error', message.error || 'No se pudo autorizar el dispositivo. FF');
+                }
+                transferWs.close();
+                router.back(); // Volvemos a la pantalla anterior
+            };
+
+            transferWs.onerror = (e) => {
+                Alert.alert('Error de Conexión', 'No se pudo comunicar con el servidor para la autorización.');
+                router.back();
+            };
+
+        } catch (error) {
+            console.error("Error al autorizar:", error);
+            Alert.alert('Error', 'Ocurrió un problema al intentar autorizar el dispositivo.');
+            router.back();
+        }
+    };
 
   const translateY = scanAnim.interpolate({
     inputRange: [0, 1],
