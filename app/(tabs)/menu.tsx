@@ -3,30 +3,29 @@ import { useTheme } from '@/app/theme/themeContext';
 import { darkTheme } from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
-import { Animated, Dimensions, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { useRef } from "react";
+import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
-
+const isSmartwatch = width < 300;
+  const isTablet = width > 600;
 export default function MenuScreen() {
-   const [isdark, setDarkMode] = useState(false)
-   const {theme, toggleTheme} = useTheme()
+   
+  const {theme, toggleTheme} = useTheme()
   const router = useRouter()
-
-
- 
-    
+      
   const MenuOption = ({
     icon,
     title,
     onPress,
-    color = "#0a1e55",
+    color,
+
   }: {
     icon: string
     title: string
     onPress: () => void
     color?: string
+
   }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current
 
@@ -55,7 +54,12 @@ export default function MenuScreen() {
               <Ionicons name={icon as any} size={24} color="#fff" />
             </View>
             <Text style={[styles.optionText, {color: theme.white}]}>{title}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
+            { isSmartwatch? (
+              <></>
+            ):(
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            )
+            }
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -64,51 +68,99 @@ export default function MenuScreen() {
   const backgroundImage = theme === darkTheme  
         ? require('@/assets/images/back_oscuro.png')  // imagen para modo oscuro
         : require('@/assets/images/back_claro.png')
+        
   return (
+    <View style={[styles.container,{backgroundColor: theme.background}]}>
+    { isSmartwatch ?(
     <ImageBackground
       source={backgroundImage}
       style={styles.backgroundImage}
       resizeMode="cover"
-    >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
-        <Ionicons name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
+      >
+      
+      {/* Contenedor centrado */}
+      <ScrollView style={styles.centeredContainerScroll}  contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      {/* Tarjeta principal */}
+        <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
+          <View style={styles.optionsContainer}>
 
+          <MenuOption
+              icon="qr-code-outline"
+              title="Iniciar Sesión"
+              onPress={() => router.push("/(tabs)/generarqr")}
+              />
+
+          <MenuOption
+              icon="settings-outline"
+              title="Ajustes"
+              onPress={() => router.push("/ajustes")}
+              color="#0066CC"
+              />
+          <MenuOption
+              icon="home-outline"
+              title="Volver"
+              onPress={() => router.push("/")}
+              color="#0066CC"
+              />
+
+          </View>
+        </View>
+      </ScrollView>
+      
+      </ImageBackground>
+    ):(
+
+      
+      <ImageBackground
+      source={backgroundImage}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/")}>
+      <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+      
       {/* Contenedor centrado */}
       <View style={styles.centeredContainer}>
-        {/* Tarjeta principal */}
-        <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
-          <View style={styles.header}>
+      {/* Tarjeta principal */}
+      <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
+      <View style={styles.header}>
             <Text style={[styles.title,{color:theme.white_blue}]}>Menú Principal</Text>
             <Text style={[styles.subtitle, {color:theme.white_blue}]}>Selecciona una opción</Text>
           </View>
 
-          <View style={styles.optionsContainer}>
+<View style={styles.optionsContainer}>
             <MenuOption
               icon="settings-outline"
               title="Ajustes"
               onPress={() => router.push("/ajustes")}
               color="#0066CC"
-            />
+              />
 
             <MenuOption
               icon="bookmark-outline"
               title="Historial"
               onPress={() => router.push("/historial")}
               color="#0066CC"
-            />
+              />
 
             <MenuOption icon="person-outline" title="Mi perfil" onPress={() => router.push("/user")} color="#0066CC" />
           </View>
         </View>
-      </View>
-    </ImageBackground>
+        </View>
+      
+      </ImageBackground>
+    )
+  }
+   </View>
   )
 }
+
 
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    width: width * 1
   },
   centeredContainer: {
     flex: 1,
@@ -116,11 +168,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+  centeredContainerScroll: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
   cardContainer: {
-    width: width * 0.9,
+    width: isSmartwatch? width*0.72: width * 0.9,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 30,
-    padding: 30,
+    borderRadius: isSmartwatch? 20 : 30,
+    padding: isSmartwatch? 5: 30,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -131,13 +187,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
+    position:"absolute",
+    top: isSmartwatch? 2: 50,
+    left: isSmartwatch? 80: 20,
     zIndex: 2,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 25,
-    padding: 12,
+    padding: isSmartwatch? 4: 12,
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.5)",
   },
@@ -156,12 +212,18 @@ const styles = StyleSheet.create({
     color: "rgba(0, 100, 200, 0.8)",
     textAlign: "center",
   },
+  menu_element:{
+    width:50,
+    height:50,
+    backgroundColor: "#111"
+  },
   optionsContainer: {
-    gap: 15,
+    gap: isSmartwatch? 10:15,
   },
   option: {
     borderRadius: 15,
-    marginBottom: 8,
+    height: isSmartwatch? 45 : 100,
+    marginBottom: isSmartwatch? 0:8,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -169,16 +231,17 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 4,
+    elevation:4,
+    justifyContent: "center"
   },
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding:isSmartwatch? 1: 20,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
+    width:isSmartwatch? 30: 50,
+    height: isSmartwatch? 30: 50,
     borderRadius: 25,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
@@ -187,9 +250,15 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    fontSize: 18,
+    fontSize:isSmartwatch? 13: 18,
     fontWeight: "700",
     color: "#fff",
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: 'rgba(28, 28, 28, 0.8)',
   },
 })
 function setUsuario_id(id: any) {

@@ -2,11 +2,16 @@ import { useTheme } from '@/app/theme/themeContext';
 import config from '@/lib/config';
 import { getAjustesUsuario, getInfoUsuario } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
+
 import React, { useEffect, useState } from 'react';
+const { height, width } = Dimensions.get('window');
+
 import {
   Alert,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,9 +21,12 @@ import {
   View
 } from 'react-native';
 
+const isSmartwatch = width < 300;
 export default function Ajustes() {
   const router = useRouter();
-    // Estados para los ajustes
+
+  // Estados para los ajustes
+  const [loading, setLoading] = useState(true);
   const [autoTranslate, setAutoTranslate] = useState(true);
   const [saveHistory, setSaveHistory] = useState(true);
   const [vibration, setVibration] = useState(false);
@@ -26,7 +34,8 @@ export default function Ajustes() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [usuario_id, setUsuario_id] = useState()
   const {theme, toggleTheme} = useTheme()
-  
+
+ 
   useEffect(() => {
     const fetchUsuario = async () => {
       try {
@@ -51,9 +60,11 @@ export default function Ajustes() {
        console.log("Ajustes obtenidos:", ajustes);
        console.log(user.id)
 
-       if (ajustes) setDarkMode(ajustes.modo_oscuro === 1);
+       if (ajustes) {setDarkMode(ajustes.modo_oscuro === 1);
+       }
      }
-   };
+     setLoading(false)
+   }
    initAjustes();
  }, []);
 
@@ -83,6 +94,24 @@ export default function Ajustes() {
       ]
     );
   };
+
+  useEffect(() => {
+  const cargarTemaLocal = async () => {
+    try {
+      const valor = await AsyncStorage.getItem('modo_oscuro');
+      if (valor !== null) {
+        const booleano = valor === '1';
+        setDarkMode(booleano);
+
+        if (booleano) toggleTheme(); // si estaba activado, cambia el tema
+      }
+    } catch (error) {
+      console.error('Error cargando modo oscuro local:', error);
+    }
+  };
+
+  cargarTemaLocal();
+}, []);
 
   const SettingItem = ({ 
     title, 
@@ -115,8 +144,9 @@ export default function Ajustes() {
 
   return (
     <View style={[styles.container, {backgroundColor: theme.background}]}>
-      {/* Header */}
-      <View style={[styles.header, {backgroundColor: theme.background}]}>
+      { isSmartwatch? (
+        <>
+        <View style={[styles.header, {backgroundColor: theme.background}]}>
         <TouchableOpacity style={[styles.backButton]} onPress={() => router.push('/menu')}>
           <Ionicons name="arrow-back" size={28} color={theme.tabIconDefault} />
         </TouchableOpacity>
@@ -125,7 +155,7 @@ export default function Ajustes() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Sección de Traducción */}
+ 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Traducción</Text>
           
@@ -144,7 +174,7 @@ export default function Ajustes() {
           />
         </View>
 
-        {/* Sección de Historial */}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Historial</Text>
           
@@ -168,33 +198,36 @@ export default function Ajustes() {
           </Pressable>
         </View>
 
-        {/* Sección de Interfaz */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Interfaz</Text>
-          
+          {!loading &&(
           <SettingItem
             title="Modo oscuro"
             subtitle="Cambiar a tema oscuro"
             value={darkMode}
             onValueChange={async (value) => {
-    setDarkMode(value);             // (si lo necesitas localmente)
-    toggleTheme();                  // cambia el tema visualmente
+              setDarkMode(value);             // (si lo necesitas localmente)
+              toggleTheme();  
+              const user = await getInfoUsuario();
+              if(user?.id){
 
-    try {
-      await fetch('http://192.168.1.74:4000/ajustes/modificarajuste', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          'usuario_id': 3,
-          'modo_oscuro': value ? 1 : 0,
-        }),
-      });
-    } catch (error) {
-      console.error('Error actualizandoo modo oscuro en backend', error);
-    }
-  }}
+                try {
+                  await AsyncStorage.setItem('modo_oscuro', value? '1' : '0')
+                  await fetch(`${config.BACKEND_URL_BASE}/ajustes/modificarajuste`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        'usuario_id': user.id,
+                        'modo_oscuro': value ? 1 : 0,
+                      }),
+                    });
+                    } catch (error) {
+                      console.error('Error actualizandoo modo oscuro en backend', error);
+                    }
+                  }}
+                }                // cambia el tema visualmente
           />
-          
+              )}
           <SettingItem
             title="Vibración"
             subtitle="Vibrar al completar traducción"
@@ -203,7 +236,7 @@ export default function Ajustes() {
           />
         </View>
 
-        {/* Sección de Información */}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información</Text>
           
@@ -230,6 +263,124 @@ export default function Ajustes() {
           </Pressable>
         </View>
       </ScrollView>
+      </>
+
+      ):(
+
+      <>
+      <View style={[styles.header, {backgroundColor: theme.background}]}>
+        <TouchableOpacity style={[styles.backButton]} onPress={() => router.push('/menu')}>
+          <Ionicons name="arrow-back" size={28} color={theme.tabIconDefault} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, {color:theme.text}]}>Ajustes</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Traducción</Text>
+          
+          <SettingItem
+            title="Traducción automática"
+            subtitle="Traduce automáticamente al detectar voz"
+            value={autoTranslate}
+            onValueChange={setAutoTranslate}
+          />
+          
+          <SettingItem
+            title="Modo sin conexión"
+            subtitle="Usar traducciones básicas sin internet"
+            value={offlineMode}
+            onValueChange={setOfflineMode}
+          />
+        </View>
+
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Historial</Text>
+          
+          <SettingItem
+            title="Guardar historial"
+            subtitle="Mantener registro de traducciones"
+            value={saveHistory}
+            onValueChange={setSaveHistory}
+          />
+          
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]} onPress={handleClearHistory}>
+            <View style={[styles.settingText]}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>
+                Limpiar historial
+              </Text>
+              <Text style={styles.settingSubtitle}>
+                Eliminar todas las traducciones guardadas
+              </Text>
+            </View>
+            <Ionicons name="trash-outline" size={24} color="#ff4444" />
+          </Pressable>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Interfaz</Text>
+          
+          <SettingItem
+            title="Modo oscuro"
+            subtitle="Cambiar a tema oscuro"
+            value={darkMode}
+            onValueChange={async (value) => {
+              setDarkMode(value);             // (si lo necesitas localmente)
+              toggleTheme();                  // cambia el tema visualmente
+              
+              try {
+                await fetch(`${config.BACKEND_URL_BASE}/ajustes/modificarajuste`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+          'usuario_id': 3,
+          'modo_oscuro': value ? 1 : 0,
+        }),
+      });
+    } catch (error) {
+      console.error('Error actualizandoo modo oscuro en backend', error);
+    }
+  }}
+          />
+          
+          <SettingItem
+            title="Vibración"
+            subtitle="Vibrar al completar traducción"
+            value={vibration}
+            onValueChange={setVibration}
+            />
+        </View>
+
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información</Text>
+          
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]}>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Acerca de Spanglish</Text>
+              <Text style={styles.settingSubtitle}>Versión 1.0.0</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </Pressable>
+          
+          <Pressable style= {[styles.settingItem, {backgroundColor:theme.background}]}>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Política de privacidad</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </Pressable>
+          
+          <Pressable style={[styles.settingItem, {backgroundColor:theme.background}]}>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Términos de uso</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </Pressable>
+        </View>
+      </ScrollView>
+      </>
+      )}
     </View>
   );
 }
@@ -243,19 +394,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
+    paddingTop: isSmartwatch? 10 : 50,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom:isSmartwatch? 5: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e5e9',
   },
   backButton: {
     padding: 8,
-
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: isSmartwatch? 15:20,
     fontWeight: '600',
     color: '#333',
   },
@@ -267,13 +417,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   section: {
-    marginTop: 30,
+    marginTop: isSmartwatch? 20: 30,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: isSmartwatch? 12 : 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 15,
+    marginBottom:  isSmartwatch? 5: 15,
     paddingHorizontal: 5,
   },
   settingItem: {
@@ -281,8 +431,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: isSmartwatch? 10: 16,
+    paddingHorizontal:isSmartwatch? 5: 20,
     marginBottom: 2,
     borderRadius: 12,
   },
@@ -291,13 +441,13 @@ const styles = StyleSheet.create({
     color: '#444'
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize:  isSmartwatch? 14: 16,
     fontWeight: '500',
     color: '#333',
     marginBottom: 2,
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: isSmartwatch? 12 : 14,
     color: '#666',
   },
 });
