@@ -10,9 +10,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, ImageBackground, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
+//import * as Speech from 'expo-speech';
 const { height, width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  //const [textToSpeak, setTextToSpeak] = useState('');
   const {theme, toggleTheme} = useTheme()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
@@ -177,6 +179,39 @@ export default function WelcomeScreen() {
       }
   };
 
+  /*const speak = () => {
+    if (textToSpeak.trim() === '') {
+      Alert.alert('Error', 'Por favor, introduce el texto que deseas leer.');
+      return;
+    }
+
+    // El primer argumento es el texto a reproducir.
+    // El segundo argumento es un objeto de opciones.
+    Speech.speak(textToSpeak, {
+      language: 'es-ES', // Establece el idioma a español
+      pitch: 1.2,        // Un tono más alto
+      rate: 0.8,         // Una velocidad un poco más lenta
+      
+      // Puedes agregar callbacks para saber cuándo termina o hay un error.
+      onDone: () => console.log('La lectura ha terminado.'),
+      onError: (e) => console.log('Error de lectura:', e),
+    });
+  };
+
+  const stopSpeaking = () => {
+    // Detiene cualquier lectura en curso.
+    Speech.stop();
+  };
+
+  const empezarDictado = (translatedText : string, langTo: string) => {
+    
+    Speech.speak(translatedText,{
+      language:langTo,
+      pitch: 1.2,       
+      rate: 0.8,
+    })
+  }
+    */
   const getTranslationFromBackend = async (originalText: string, from: string, to: string) => {
     console.log("texto recibido: ", originalText, "mandandose a: ",config.BACKEND_URL_BASE)
     if (!originalText || originalText.trim() === '') return;
@@ -277,7 +312,9 @@ export default function WelcomeScreen() {
                 itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 1)' }}
                 containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)' }}
               />
-              <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => { }}>
+              <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => {
+                //empezarDictado(translatedText, selectedLangTo);
+               }}>
                 <Ionicons name="volume-high" size={24} color="#333" />
               </Pressable>
             </View>
@@ -286,7 +323,7 @@ export default function WelcomeScreen() {
             {translatedText && !isTranslating && (
               <>
                 <Text style={[styles.translatedTextLabel, isSmartwatch && styles.textDisplayContainer]}>Traducido ({selectedLangTo}):</Text>
-                <Text style={styles.translatedTextDisplay}>{translatedText}</Text>
+                <Text id='textToS' style={styles.translatedTextDisplay}>{translatedText}</Text>
               </>
             )}
           </View>
@@ -340,7 +377,9 @@ export default function WelcomeScreen() {
                 itemContainerStyle={{ borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
                 containerStyle={{ width: 150, maxHeight: 250, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 1)' }}
               />
-              <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => { }}>
+              <Pressable style={[styles.option, { borderRadius: 15, backgroundColor: 'rgba(255, 255, 255, 0.5)' }]} onPress={() => { 
+                //speak();
+              }}>
                 <Ionicons name="volume-high" size={24} color="#333" />
               </Pressable>
             </View>

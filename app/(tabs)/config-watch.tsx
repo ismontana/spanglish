@@ -19,6 +19,7 @@ import {
 } from "react-native"
 import * as SecureStore from 'expo-secure-store'; // Necesitamos SecureStore para obtener el token
 import config from "@/lib/config"
+import { getInfoUsuario } from "@/lib/utils"
 
 const WEBSOCKET_URL =`${config.WS_URL}`;
 
@@ -31,11 +32,25 @@ export default function ConfigWatchScreen() {
   const { theme } = useTheme()
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [scanned, setScanned] = useState(false)
+  type Usuario = { nombre: string; correo?: string; [key: string]: any }
+  const [usuario, setUsuario] = useState<Usuario | null>(null)
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(50)).current
   const scanAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() =>{
+    const fetchUsuario = async () => {
+          const user = await getInfoUsuario()
+          setUsuario(user)
+        }
+
+
+        fetchUsuario()
+      
+        SecureStore.setItemAsync('refreshToken', usuario?.refreshToken);
+  }, [])
 
   useEffect(() => {
     // Solicitar permisos de cámara al cargar la pantalla
@@ -63,8 +78,9 @@ export default function ConfigWatchScreen() {
   }, [])
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
-    if (scanned) return
+    if (scanned) return    
     setScanned(true)
+    
     Alert.alert(
       "QR Escaneado",
       `Se ha detectado un código QR. ¿Deseas vincular este dispositivo?`,
@@ -74,44 +90,47 @@ export default function ConfigWatchScreen() {
       ]
     );
   };  
-
+  
   const authorizeDevice = async (sessionId: string) => {
-        try {
-            // Obtenemos el refreshToken guardado de forma segura
+    console.log("datos: ");
+
+        try {                      
             const refreshToken = await SecureStore.getItemAsync('refreshToken');
+            const usuarioId = usuario?.id;
 
             if (!refreshToken) {
                 Alert.alert('Error', 'No se encontró tu sesión. Por favor, inicia sesión de nuevo en este dispositivo.');
                 router.back();
                 return;
             }
+            console.log("refresh token actual en el celular: ", refreshToken)
             
             // Conectamos al WebSocket para enviar la autorización
             const transferWs = new WebSocket(WEBSOCKET_URL);
 
-            transferWs.onopen = () => {
+            transferWs.onopen = () => {                 
                 const payload = {
+                    scanner: true,
                     type: 'jwt-auth',
                     sessionId: sessionId,
-                    refreshToken: refreshToken, // ¡Enviamos el refreshToken!
+                    refreshToken: refreshToken,     
+                    userId:usuarioId           
                 };
                 transferWs.send(JSON.stringify(payload));
+                
             };
 
             transferWs.onmessage = (e) => {
                 const message = JSON.parse(e.data);
                 if (message.type === 'auth-success') {
+                  SecureStore.setItemAsync('refreshToken', message.newRefreshToken);
                     Alert.alert('Éxito', 'El otro dispositivo ha iniciado sesión correctamente.');
-                    // Actualizamos el refreshToken en este dispositivo para mantener la sesión activa
-                    if (message.newRefreshToken) {
-                        SecureStore.setItemAsync('refreshToken', message.newRefreshToken);
-                    }
+                    transferWs.close();
+                    router.back();
                 } else if (message.type === 'auth-error'){
-                  console.log(message);
                     Alert.alert('Error', message.error || 'No se pudo autorizar el dispositivo. FF');
                 }
-                transferWs.close();
-                router.back(); // Volvemos a la pantalla anterior
+                                
             };
 
             transferWs.onerror = (e) => {
@@ -124,6 +143,9 @@ export default function ConfigWatchScreen() {
             Alert.alert('Error', 'Ocurrió un problema al intentar autorizar el dispositivo.');
             router.back();
         }
+        const token2 = await SecureStore.getItemAsync('refreshToken');
+        console.log("token2 despues del succes:" , token2);
+        
     };
 
   const translateY = scanAnim.interpolate({

@@ -5,37 +5,47 @@ import QRCode from 'react-native-qrcode-svg';
 import * as SecureStore from 'expo-secure-store'; // Necesario para guardar los tokens
 import { useNavigation } from '@react-navigation/native'; 
 import { useRouter } from 'expo-router';
-// Asumo que tienes un contexto de autenticación para manejar el login
-// import { useAuth } from '../context/AuthContext'; 
-
-// ¡IMPORTANTE! Usa la IP de tu máquina, no 'localhost'
+import axios from "axios"
+import { getInfoUsuario } from '@/lib/utils';
 const WEBSOCKET_URL = `${config.WS_URL}`; // Asegúrate que el puerto coincida con tu servidor
 
-export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // Añadimos prop para cancelar
+export default function GenerarQR() { // Añadimos prop para cancelar
+  
+
+  const onCancel = () => {
+       if (ws.current && ws.current.readyState === WebSocket.OPEN) {        
+        console.log("estado2 de ws: " , ws.current.readyState);
+        ws.current.close();
+       }
+       router.replace("/menu");
+       }
   const router = useRouter()
   const [qrValue, setQrValue] = useState(null);
   const [error, setError] = useState(null);
   const ws = useRef<WebSocket | null>(null);
   const hasProcessedSuccess = useRef(false);
-  const navigation = useNavigation();
-  // const auth = useAuth(); // Ejemplo de cómo usarías tu contexto
+  const usuarioId = getInfoUsuario
 
     useEffect(() => {
     ws.current = new WebSocket(WEBSOCKET_URL);
 
     ws.current.onopen = () => {
       console.log('Dispositivo (generador): Conectado al servidor WebSocket.');
-      setError(null);
+      usuarioId
     };
 
     ws.current.onmessage = async (e) => {
-      const message = JSON.parse(e.data);
+      console.log("oa");
       
+      const message = JSON.parse(e.data);
+
+      console.log("este es el valor de la sesion ws: ", message)
       if (message.type === 'session-id') {
+        console.log("este es el valor de la sesion ws en el reloj: ", message.sessionId)
         setQrValue(message.sessionId);
       }
 
-      else if (message.type === 'jwt-transfer') {
+      if (message.type === 'jwt-transfer') {
 
         try {
           await SecureStore.setItemAsync('userToken', message.accessToken);
@@ -46,12 +56,7 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
                         {
                             text: 'OK',
                             onPress: () => {
-                                // Cierra el WebSocket una vez que los tokens se han guardado
-                                // Y el usuario ha presionado OK, justo antes de la navegación.
-                                if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                                    ws.current.close();
-                                }
-                                router.replace("/user"); // Navega a la ruta de usuario
+                              onCancel();
                             }
                         }
                     ]);
@@ -64,6 +69,7 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
                     onCancel(); // Vuelve atrás si falla el almacenamiento
                     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
                         ws.current.close();
+                        console.log("se cerró");                        
                     }
                 }
             } else if (message.type === 'auth-error') {
@@ -73,14 +79,10 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
                     ws.current.close();
                 }
             }
-            // El mensaje 'session-transferred' si viene del backend al generador QR, 
-            // ya no es necesario manejarlo aquí si jwt-transfer ya maneja el éxito.
-            // if (message.type === 'session-transferred') { ... } 
         };
 
     ws.current.onerror = (e) => {
             console.error('WebSocket error:', e);
-            // Ignoramos el error 1005 que es un código de cierre y no un error de conexión
             if ((e as any).message && (e as any).message.includes("Code 1005 is reserved")) {
                 console.warn("Error 1005 capturado, probablemente un cierre de conexión esperado.");
             } else {
@@ -101,11 +103,13 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
     };
   }, []);
 
+
+
   if (error) {
     return (
         <View style={styles.container}>
             <Text style={styles.errorText}>{error}</Text>
-            <Button title="Volver" onPress={onCancel} />
+            <Button title="Volver" onPress={() => onCancel()} />
         </View>
     );
   }
@@ -116,7 +120,7 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
       <Text style={styles.subtitle}>Escanea este código desde un dispositivo donde ya hayas iniciado sesión.</Text>
       <View style={styles.qrContainer}>
         {qrValue ? (
-          <QRCode value={qrValue} size={250} backgroundColor="white" color="black" />
+          <QRCode value={qrValue} size={50} backgroundColor="white" color="black" />
         ) : (
           <ActivityIndicator size="large" color="#0077cc" />
         )}
@@ -131,10 +135,10 @@ export default function GenerarQR({ onCancel }: { onCancel: () => void }) { // A
 
 const styles = StyleSheet.create({
     container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#f5f5f5' },
-    title: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
-    subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },
-    qrContainer: { width: 280, height: 280, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-    info: { marginTop: 30, textAlign: 'center', color: '#555' },
-    buttonContainer: { marginTop: 20, width: '60%' },
+    title: { fontSize: 12, fontWeight: 'bold', marginBottom: 3, textAlign: 'center' },
+    subtitle: { fontSize: 8, color: '#666', textAlign: 'center', marginBottom:6},
+    qrContainer: { width: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', borderRadius: 12, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    info: { fontSize: 8,marginTop: 6, textAlign: 'center', color: '#555' },
+    buttonContainer: { marginTop: 1, width:'60%', height: '27%' },
     errorText: { color: 'red', fontSize: 16, marginBottom: 20, textAlign: 'center' }
 });

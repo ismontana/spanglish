@@ -3,47 +3,82 @@ import { useTheme } from '@/app/theme/themeContext';
 import { darkTheme } from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
-import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import axios from "axios";
+import config from "@/lib/config";
+import { useRef, useEffect, useState } from "react";
+import { getInfoUsuario } from "@/lib/utils"
+import * as SecureStore from "expo-secure-store"
+import {  Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
 const isSmartwatch = width < 300;
-  const isTablet = width > 600;
+const isTablet = width > 600;
+const fadeAnim = useRef(new Animated.Value(1)).current;
+    const scaleAnim = useRef(new Animated.Value(1)).current;
 export default function MenuScreen() {
+    type Usuario = { nombre: string; correo?: string; [key: string]: any }
+    const [usuario, setUsuario] = useState<Usuario | null>(null)
+    useEffect(() => {
+        const fetchUsuario = async () => {
+          const user = await getInfoUsuario()
+          setUsuario(user)
+        }
+
+        fetchUsuario()
+      }, [])
    
   const {theme, toggleTheme} = useTheme()
   const router = useRouter()
+
+  const handleLogout = async () => {
+      // Animación de salida
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.8,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(async () => {        
+        await SecureStore.deleteItemAsync("userToken")        
+        await SecureStore.deleteItemAsync("refreshToken")        
+        router.push("/")
+      })
+      console.log(usuario?.nombre ,'usuario')
+    }
       
   const MenuOption = ({
-    icon,
-    title,
-    onPress,
-    color,
-
-  }: {
-    icon: string
-    title: string
-    onPress: () => void
-    color?: string
-
-  }) => {
-    const scaleAnim = useRef(new Animated.Value(1)).current
-
-    const handlePress = () => {
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start()
-      onPress()
-    }
+      icon,
+      title,
+      onPress,
+      color,
+    }: {
+      icon: string
+      title: string
+      // SOLUCIÓN: Permite que onPress sea una función que devuelva una Promesa (como las funciones async)
+      onPress: () => void | Promise<void>
+      color?: string
+    }) => {
+      const scaleAnim = useRef(new Animated.Value(1)).current
+      const handlePress = () => {
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 0.95,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+        ]).start()
+        onPress()
+      }
    ;
 
     return (
@@ -84,11 +119,19 @@ export default function MenuScreen() {
         <View style={[styles.cardContainer,{backgroundColor:theme.background}]}>
           <View style={styles.optionsContainer}>
 
-          <MenuOption
-              icon="qr-code-outline"
-              title="Iniciar Sesión"
-              onPress={() => router.push("/(tabs)/generarqr")}
-              />
+         {usuario?.id === undefined || usuario?.id === null ?  (
+             <MenuOption
+                                icon="qr-code-outline"
+                                title="Iniciar Sesión"
+                                onPress={() => router.push("/(tabs)/generarqr")}
+                            />
+           ) : (
+               <MenuOption
+                                  icon="log-out-outline"
+                                  title="Cerrar sesión"
+                                  onPress={handleLogout}
+                              />
+           )}
 
           <MenuOption
               icon="settings-outline"
@@ -110,7 +153,7 @@ export default function MenuScreen() {
       </ImageBackground>
     ):(
 
-      
+
       <ImageBackground
       source={backgroundImage}
       style={styles.backgroundImage}
