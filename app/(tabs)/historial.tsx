@@ -12,7 +12,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  useWindowDimensions
 } from 'react-native';
 
 interface HistorialItem {
@@ -27,12 +28,16 @@ interface HistorialItem {
 
 export default function Historial() {
   const router = useRouter();
-   const [isdark, setDarkMode] = useState(false)
-   const {theme, toggleTheme} = useTheme()
+  const [isdark, setDarkMode] = useState(false);
+  const { theme } = useTheme();
   const [searchText, setSearchText] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [historial, setHistorial] = useState<HistorialItem[]>([]);
   const [userId, setUserId] = useState<number | null>(null);
+
+  // 📏 Detectar tamaño de pantalla
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 300; // smartwatch o pantallas muy pequeñas
 
   useEffect(() => {
     const fetchUsuario = async () => {
@@ -51,22 +56,14 @@ export default function Historial() {
 
   useEffect(() => {
     const fetchHistorial = async () => {
-      if (!userId || userId == null) {
-        console.log("usuario:", userId);
-        return;
-      };
-      
+      if (!userId) return;
       try {
-        
         const response = await axios.post(config.BACKEND_URL_BASE + '/conversaciones/gethistorial', {
           id_usuario: userId
         });
-        console.log('Historial obtenido:', response.data);
-        if (response.data.error === 'No se encontraron conversaciones') {
-          console.log('no hay historial:', response.data.error);
-          return;
-        }
-        
+
+        if (response.data.error === 'No se encontraron conversaciones') return;
+
         const data = response.data.map((item: any) => ({
           id: item.id.toString(),
           originalText: item.texto_original,
@@ -76,23 +73,23 @@ export default function Historial() {
           timestamp: new Date(item.fecha || new Date()),
           isFavorite: item.isFavorite || false
         }));
-        
+
         setHistorial(data);
       } catch (error) {
         console.error('Error al obtener historial:', error);
       }
     };
-    
+
     fetchHistorial();
   }, [userId]);
 
   const filteredHistorial = historial.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.originalText.toLowerCase().includes(searchText.toLowerCase()) ||
       item.translatedText.toLowerCase().includes(searchText.toLowerCase());
-    
+
     const matchesFavorites = showFavoritesOnly ? item.isFavorite : true;
-    
+
     return matchesSearch && matchesFavorites;
   });
 
@@ -100,112 +97,95 @@ export default function Historial() {
     setHistorial(prev => prev.filter(item => item.id !== id));
     axios.post(config.BACKEND_URL_BASE + '/conversaciones/borrarconversacion', {
       id_conversacion: id
-    })
-      .then(() => {
-        console.log('Traducción eliminada correctamente');
-      }
-    );
+    }).then(() => console.log('Traducción eliminada correctamente'));
   };
 
   const formatTime = (date: Date) => {
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
     if (diffInHours < 1) return 'Hace unos minutos';
     if (diffInHours < 24) return `Hace ${diffInHours}h`;
     if (diffInHours < 48) return 'Ayer';
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `Hace ${diffInDays} días`;
+    return `Hace ${Math.floor(diffInHours / 24)} días`;
   };
 
   const renderHistorialItem = ({ item }: { item: HistorialItem }) => (
-    <View style={styles.historialItem}>
+    <View style={[styles.historialItem, isSmallScreen && styles.historialItemSmall]}>
       <View style={styles.languageIndicator}>
-        <Text style={styles.languageText}>{item.fromLanguage}</Text>
-        <Ionicons name="arrow-forward" size={16} color="#666" />
-        <Text style={styles.languageText}>{item.toLanguage}</Text>
+        <Text style={[styles.languageText, isSmallScreen && styles.languageTextSmall]}>{item.fromLanguage}</Text>
+        <Ionicons name="arrow-forward" size={isSmallScreen ? 12 : 16} color="#666" />
+        <Text style={[styles.languageText, isSmallScreen && styles.languageTextSmall]}>{item.toLanguage}</Text>
       </View>
-      
+
       <View style={styles.translationContent}>
-        <Text style={[styles.originalText,{color:theme.text}]}>{item.originalText}</Text>
-        <Text style={[styles.translatedText,{color:theme.text}]}>{item.translatedText}</Text>
+        <Text 
+          style={[styles.originalText, {color: theme.text}, isSmallScreen && styles.textSmall]} 
+          numberOfLines={2}
+        >
+          {item.originalText}
+        </Text>
+        <Text 
+          style={[styles.translatedText, {color: theme.text}, isSmallScreen && styles.textSmall]} 
+          numberOfLines={2}
+        >
+          {item.translatedText}
+        </Text>
       </View>
-      
+
       <View style={styles.itemFooter}>
-        <Text style={styles.timestamp}>{formatTime(item.timestamp)}</Text>
-        <View style={styles.actions}>
-          <Pressable 
-            style={styles.actionButton}
-            onPress={() => deleteItem(item.id)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#666" />
-          </Pressable>
-        </View>
+        <Text style={[styles.timestamp, isSmallScreen && styles.timestampSmall]}>{formatTime(item.timestamp)}</Text>
+        <Pressable onPress={() => deleteItem(item.id)} style={styles.actionButton}>
+          <Ionicons name="trash-outline" size={isSmallScreen ? 16 : 20} color="#666" />
+        </Pressable>
       </View>
     </View>
   );
 
   return (
-    <View style={[styles.container, {backgroundColor:theme.background}]}>
+    <View style={[styles.container, {backgroundColor: theme.background}]}>
       {/* Header */}
-      <View style={[styles.header, {backgroundColor:theme.background}]}>
+      <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/menu')}>
-          <Ionicons name="arrow-back" size={28} color={theme.text} />
+          <Ionicons name="arrow-back" size={isSmallScreen ? 20 : 28} color={theme.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, {color:theme.text}]}>Historial</Text>
-        <Pressable 
-          style={styles.filterButton}
-          onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
-        >
+        {!isSmallScreen && <Text style={[styles.headerTitle, {color: theme.text}]}>Historial</Text>}
+        <Pressable onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}>
           <Ionicons 
             name={showFavoritesOnly ? "star" : "star-outline"} 
-            size={24} 
+            size={isSmallScreen ? 18 : 24} 
             color={showFavoritesOnly ? "#FFD700" : "#666"} 
           />
         </Pressable>
       </View>
 
-      {/* Barra de búsqueda */}
-      <View style={[styles.searchContainer,{backgroundColor:theme.background}]}>
-        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, {backgroundColor:theme.background}]}
-          placeholder="Buscar traducciones..."
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholderTextColor={theme.text2}
-        />
-        {searchText.length > 0 && (
-          <Pressable onPress={() => setSearchText('')}>
-            <Ionicons name="close-circle" size={20} color="#666" />
-          </Pressable>
-        )}
-      </View>
+      {/* Buscador */}
+      {!isSmallScreen && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar traducciones..."
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholderTextColor={theme.text2}
+          />
+        </View>
+      )}
 
-      {/* Lista de historial */}
+      {/* Lista */}
       {filteredHistorial.length > 0 ? (
         <FlatList
           data={filteredHistorial}
           renderItem={renderHistorialItem}
           keyExtractor={(item) => item.id}
-          style={styles.list}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="document-text-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyTitle}>
+          <Ionicons name="document-text-outline" size={isSmallScreen ? 40 : 64} color="#ccc" />
+          <Text style={[styles.emptyTitle, isSmallScreen && styles.textSmall]}>
             {showFavoritesOnly ? 'No hay favoritos' : 'No hay traducciones'}
-          </Text>
-          <Text style={styles.emptySubtitle}>
-            {showFavoritesOnly 
-              ? 'Marca traducciones como favoritas para verlas aquí'
-              : searchText 
-                ? 'No se encontraron resultados para tu búsqueda'
-                : 'Tus traducciones aparecerán aquí'
-            }
           </Text>
         </View>
       )}
@@ -214,131 +194,66 @@ export default function Historial() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e5e9',
+    paddingBottom: 20
   },
-  backButton: {
-    padding: 8,
+  headerSmall: {
+    paddingTop: 20,
+    paddingHorizontal: 10,
+    paddingBottom: 10
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-  },
-  filterButton: {
-    padding: 8,
-  },
+  backButton: { padding: 8 },
+  headerTitle: { fontSize: 20, fontWeight: '600' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     marginHorizontal: 20,
     marginTop: 15,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e1e5e9',
+    borderRadius: 12
   },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  list: {
-    flex: 1,
-    marginTop: 15,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16 },
+  listContent: { paddingHorizontal: 10, paddingBottom: 20 },
   historialItem: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e1e5e9',
+    borderColor: '#e1e5e9'
   },
-  languageIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+  historialItemSmall: {
+    padding: 8
   },
+  languageIndicator: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   languageText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
-    backgroundColor: '#f0f2f5',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    marginHorizontal: 4,
+    marginHorizontal: 4
   },
-  translationContent: {
-    marginBottom: 12,
+  languageTextSmall: {
+    fontSize: 10,
+    paddingHorizontal: 4,
+    paddingVertical: 2
   },
-  originalText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  translatedText: {
-    fontSize: 16,
-    color: '#0066cc',
-    fontWeight: '500',
-    lineHeight: 22,
-  },
-  itemFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#999',
-  },
-  actions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  translationContent: { marginBottom: 8 },
+  originalText: { fontSize: 16, marginBottom: 4, lineHeight: 20 },
+  translatedText: { fontSize: 16, fontWeight: '500', lineHeight: 20 },
+  textSmall: { fontSize: 12, lineHeight: 16 },
+  itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timestamp: { fontSize: 12 },
+  timestampSmall: { fontSize: 10 },
+  actionButton: { padding: 4 },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 8 }
 });

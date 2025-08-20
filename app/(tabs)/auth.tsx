@@ -136,8 +136,9 @@ export default function AuthScreen() {
         contrasena,
       })
 
-      const { token } = loginRes.data
+      const { token, refreshToken } = loginRes.data
       await SecureStore.setItemAsync("userToken", token)
+      await SecureStore.setItemAsync("refreshToken", refreshToken)
 
       router.replace("/(tabs)/user")
     } catch (err) {

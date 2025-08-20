@@ -141,6 +141,12 @@ export default function MenuScreen() {
               />
           <MenuOption
               icon="home-outline"
+              title="Historial"
+              onPress={() => router.push("/historial")}
+              color="#0066CC"
+              />
+              <MenuOption
+              icon="home-outline"
               title="Volver"
               onPress={() => router.push("/")}
               color="#0066CC"
